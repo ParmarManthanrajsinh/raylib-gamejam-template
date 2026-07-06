@@ -59,6 +59,7 @@ dkms.conf
 *.user
 *.aps
 .vs
+out/
 
 # Clangd LSP
 .cache
