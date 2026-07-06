@@ -6,7 +6,7 @@
 
 Game::Game()
 {
-    target = LoadRenderTexture(screenWidth, screenHeight);
+    target = LoadRenderTexture(screen_width, screen_height);
     SetTextureFilter(target.texture, TEXTURE_FILTER_BILINEAR);
 }
 
@@ -17,7 +17,7 @@ Game::~Game()
 
 void Game::Update()
 {
-    frameCounter++;
+    frame_counter++;
 }
 
 void Game::Draw()
@@ -33,10 +33,12 @@ void Game::Draw()
     DrawText("6.x", 290, 90 - 26, 280, BLACK);
     DrawText("GAMEJAM", 70, 90 + 210, 120, MAROON);
 
-    if ((frameCounter / 20) % 2)
+    if ((frame_counter / 20) % 2)
+    {
         DrawText("are you ready?", 160, 500, 50, BLACK);
+    }
 
-    DrawRectangleLinesEx({0, 0, (float)screenWidth, (float)screenHeight}, 16, BLACK);
+    DrawRectangleLinesEx({0, 0, (float)screen_width, (float)screen_height}, 16, BLACK);
 
     EndTextureMode();
 

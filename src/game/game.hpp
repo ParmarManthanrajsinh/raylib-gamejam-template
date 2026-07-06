@@ -6,8 +6,8 @@
 #include <emscripten/emscripten.h>
 #endif
 
-constexpr int screenWidth = 720;
-constexpr int screenHeight = 720;
+constexpr int screen_width = 720;
+constexpr int screen_height = 720;
 
 enum class GameScreen 
 {
@@ -29,6 +29,6 @@ public:
 
 private:
     RenderTexture2D target{};
-    int frameCounter{};
-    GameScreen currentScreen{GameScreen::Logo};
+    int frame_counter{};
+    GameScreen current_screen{GameScreen::Logo};
 };
