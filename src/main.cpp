@@ -1,13 +1,13 @@
 #include "game/game.hpp"
 
-static Game *gamePtr = nullptr;
+static Game *GamePtr = nullptr;
 
 static void UpdateDrawFrame()
 {
-    if (gamePtr)
+    if (GamePtr)
     {
-        gamePtr->Update();
-        gamePtr->Draw();
+        GamePtr->Update();
+        GamePtr->Draw();
     }
 }
 
@@ -17,10 +17,10 @@ int main()
     SetTraceLogLevel(LOG_NONE);
 #endif
 
-    InitWindow(screenWidth, screenHeight, "Our raylib gamejam template");
+    InitWindow(screen_width, screen_height, "Our raylib gamejam template");
 
     Game game;
-    gamePtr = &game;
+    GamePtr = &game;
 
 #if defined(PLATFORM_WEB)
     emscripten_set_main_loop(UpdateDrawFrame, 60, 1);
@@ -33,7 +33,7 @@ int main()
     }
 #endif
 
-    gamePtr = nullptr;
+    GamePtr = nullptr;
 
     CloseWindow();
 
