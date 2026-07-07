@@ -19,23 +19,26 @@ void DrawBackground() {
     DrawRectangleLinesEx(grid_rect, 2, { 42, 58, 74, 255 });
 
     // Lane guides from inputs to grid
-    Color lane_color = ColorAlpha({ 0, 245, 212, 255 }, 0.07f);
-    float grid_left_x = K_GRID_X - K_HEX_SIZE;
+    float grid_left_x = K_GRID_X - K_HEX_SIZE * K_SQRT3 / 2;
     for (int i = 0; i < 4; i++) {
         float y = GetInputNodeY(i);
-        DrawLineEx({ K_INPUT_PIN_X + 4, y }, { grid_left_x, y }, 1, lane_color);
+        Color lane = ColorAlpha({ 0, 245, 212, 255 }, 0.20f);
+        DrawLineEx({ K_INPUT_PIN_X + 4, y }, { grid_left_x, y }, 2, lane);
+        DrawCircleV({ grid_left_x - 2, y }, 2.5f, lane);
     }
 
     // Lane guides from grid to output
     float grid_right_x = K_GRID_X + (K_GRID_COLS - 1) * K_SPACING_X + K_SPACING_X / 2 + K_HEX_SIZE * K_SQRT3 / 2;
     for (int b = 0; b < 4; b++) {
         Vector2 pin = GetOutputNodeInputPin(b);
-        DrawLineEx({ grid_right_x + 4, pin.y }, { pin.x - 6, pin.y }, 1, lane_color);
+        Color lane = ColorAlpha({ 0, 245, 212, 255 }, 0.20f);
+        DrawLineEx({ grid_right_x + 4, pin.y }, { pin.x - 6, pin.y }, 2, lane);
+        DrawCircleV({ grid_right_x + 4, pin.y }, 2.5f, lane);
     }
 
-    // Palette area background
-    DrawRectangle(0, (int)K_PALETTE_Y - 4, 720, (int)K_PALETTE_H + 8, { 18, 18, 42, 255 });
-    DrawLine(0, (int)K_PALETTE_Y - 4, 720, (int)K_PALETTE_Y - 4, { 42, 42, 74, 255 });
+    // Separators above and below palette
+    DrawLine(0, (int)K_PALETTE_Y - 2, 720, (int)K_PALETTE_Y - 2, { 42, 42, 74, 255 });
+    DrawLine(0, (int)K_PALETTE_Y + (int)K_PALETTE_H + 2, 720, (int)K_PALETTE_Y + (int)K_PALETTE_H + 2, { 42, 42, 74, 255 });
 }
 
 void DrawInfoBar(int target_hex, int current_hex, bool solved, float anim_time) {
@@ -171,11 +174,12 @@ void DrawOutputNode(int output_bits[4], int target_hex, const Pin* hovered_pin, 
 }
 
 static Rectangle GetPaletteButtonRect(int index) {
-    float btn_w = 82;
-    float spacing = 6;
-    float total_width = K_GATE_COUNT * btn_w + (K_GATE_COUNT - 1) * spacing;
-    float start_x = (720 - total_width) / 2;
-    return { start_x + index * (btn_w + spacing), K_PALETTE_Y + 4, btn_w, 58 };
+    float btn_w = 68;
+    float spacing = 4;
+    float total_gate = K_GATE_COUNT * btn_w + (K_GATE_COUNT - 1) * spacing;
+    float total = total_gate + spacing + 90;
+    float start_x = (720 - total) / 2;
+    return { start_x + index * (btn_w + spacing), K_PALETTE_Y + 12, btn_w, 32 };
 }
 
 int PickPaletteGate(Vector2 mouse_pos) {
@@ -187,7 +191,12 @@ int PickPaletteGate(Vector2 mouse_pos) {
 }
 
 Rectangle GetClearButtonRect() {
-    return { (720 - 140) / 2, K_PALETTE_Y + 58 + 14, 140, 28 };
+    float btn_w = 68;
+    float spacing = 4;
+    float total_gate = K_GATE_COUNT * btn_w + (K_GATE_COUNT - 1) * spacing;
+    float total = total_gate + spacing + 90;
+    float start_x = (720 - total) / 2;
+    return { start_x + total_gate + spacing, K_PALETTE_Y + 12, 90, 32 };
 }
 
 void DrawPalette(int selected_index) {
@@ -196,36 +205,22 @@ void DrawPalette(int selected_index) {
         Rectangle r = GetPaletteButtonRect(i);
         bool is_selected = (i == selected_index);
 
-        // Button background
         Color bg = is_selected ? Color{ 26, 58, 42, 255 } : Color{ 26, 26, 53, 255 };
         Color border = is_selected ? SKYBLUE : Color{ 58, 58, 85, 255 };
-        float thickness = is_selected ? 3.0f : 1.5f;
 
         DrawRectangleRounded(r, 0.15f, 6, bg);
         DrawRectangleRoundedLines(r, 0.15f, 6, border);
 
-        // Mini gate shape
-        Gate mini_gate;
-        mini_gate.type = type;
-        mini_gate.id = -1;
-        mini_gate.row = 0;
-        mini_gate.col = 0;
-
-        float mini_w = r.width - 36;
-        float mini_h = r.height - 22;
-        DrawGateShape(mini_gate, r.x + 18, r.y + 4, mini_w, mini_h, 0);
-
-        // Label
         const char* label = GateTypeToString(type);
-        Vector2 text_size = MeasureTextEx(GetFontDefault(), label, 7, 1);
+        Vector2 text_size = MeasureTextEx(GetFontDefault(), label, 9, 1);
         DrawText(label, (int)(r.x + r.width / 2 - text_size.x / 2),
-                 (int)(r.y + r.height - 10), 7, WHITE);
+                 (int)(r.y + r.height / 2 - text_size.y / 2), 9, WHITE);
     }
 
-    // Clear Grid button
     Rectangle clear_r = GetClearButtonRect();
-    DrawRectangleRounded(clear_r, 0.12f, 6, Color{ 42, 26, 26, 255 });
-    DrawRectangleRoundedLines(clear_r, 0.12f, 6, Color{ 255, 68, 68, 255 });
-    DrawText("CLEAR GRID", (int)(clear_r.x + 140 / 2 - 54),
-             (int)(clear_r.y + 28 / 2 - 5), 8, Color{ 255, 102, 102, 255 });
+    DrawRectangleRounded(clear_r, 0.15f, 6, Color{ 42, 26, 26, 255 });
+    DrawRectangleRoundedLines(clear_r, 0.15f, 6, Color{ 255, 68, 68, 255 });
+    Vector2 clear_ts = MeasureTextEx(GetFontDefault(), "CLEAR", 9, 1);
+    DrawText("CLEAR", (int)(clear_r.x + clear_r.width / 2 - clear_ts.x / 2),
+             (int)(clear_r.y + clear_r.height / 2 - clear_ts.y / 2), 9, Color{ 255, 102, 102, 255 });
 }

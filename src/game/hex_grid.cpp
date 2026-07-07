@@ -2,7 +2,7 @@
 #include <cmath>
 #include <raylib.h>
 
-static constexpr float k_bg_margin = 10.0f;
+static constexpr float k_bg_margin = 16.0f;
 
 void DrawFilledHexagon(Vector2 center, float size, Color fill) 
 {
@@ -53,16 +53,24 @@ bool IsPointInHex(Vector2 point, Vector2 center, float size)
 
 Rectangle GetGridRect() 
 {
+    float hex_half_w = K_HEX_SIZE * K_SQRT3 / 2;
+    float left   = K_GRID_X - hex_half_w;
+    float right  = K_GRID_X + (K_GRID_COLS - 1) * K_SPACING_X + hex_half_w;
+    if ((K_GRID_ROWS - 1) % 2 != 0) right += K_SPACING_X / 2;
+
+    float top    = K_GRID_Y - K_HEX_SIZE;
+    float bottom = K_GRID_Y + (K_GRID_ROWS - 1) * K_SPACING_Y + K_HEX_SIZE;
+
     return 
     {
-        K_GRID_X - k_bg_margin,
-        K_GRID_Y - k_bg_margin,
-        K_GRID_W + k_bg_margin * 2,
-        K_GRID_H + k_bg_margin * 2
+        left  - k_bg_margin,
+        top   - k_bg_margin,
+        (right - left)   + k_bg_margin * 2,
+        (bottom - top)   + k_bg_margin * 2
     };
 }
 
-void DrawGrid(const HexCell& hovered_cell, bool show_placement, bool is_occupied)
+void DrawGrid(const HexCell& hovered_cell, bool show_placement, bool is_occupied, float anim_time)
 {
     Color fill_even = { 21, 21, 48, 255 };
     Color fill_odd  = { 18, 18, 40, 255 };
@@ -79,25 +87,37 @@ void DrawGrid(const HexCell& hovered_cell, bool show_placement, bool is_occupied
             DrawFilledHexagon(c, K_HEX_SIZE - 1, fill);
             DrawHexOutline(c, K_HEX_SIZE, 1.5f, outline);
 
-            // Center dot
             DrawCircleV(c, 1.5f, dot_color);
         }
     }
 
-    // Hover highlight
     if (hovered_cell.IsValid()) 
     {
         Vector2 c = GetHexCenter(hovered_cell.row, hovered_cell.col);
+        float pulse = 0.7f + 0.3f * sinf(anim_time * 4.0f);
+
+        DrawFilledHexagon(c, K_HEX_SIZE + 3, ColorAlpha(SKYBLUE, 0.04f * pulse));
+
         if (show_placement && !is_occupied) 
         {
-            Color highlight_fill = ColorAlpha(SKYBLUE, 0.25f);
-            DrawFilledHexagon(c, K_HEX_SIZE - 2, highlight_fill);
-            DrawHexOutline(c, K_HEX_SIZE - 2, 2.5f, SKYBLUE);
+            DrawFilledHexagon(c, K_HEX_SIZE - 2, ColorAlpha(SKYBLUE, 0.22f * pulse));
+            DrawHexOutline(c, K_HEX_SIZE - 1, 2.5f, ColorAlpha(SKYBLUE, 0.7f * pulse));
+            DrawCircleV(c, 3, ColorAlpha(SKYBLUE, 0.9f));
+            DrawCircleLines((int)c.x, (int)c.y, 6, ColorAlpha(SKYBLUE, 0.4f * pulse));
+        } 
+        else if (show_placement && is_occupied) 
+        {
+            DrawFilledHexagon(c, K_HEX_SIZE - 2, ColorAlpha(RED, 0.12f));
+            DrawHexOutline(c, K_HEX_SIZE - 1, 2.0f, ColorAlpha(RED, 0.5f * pulse));
         } 
         else if (!is_occupied) 
         {
-            Color hover_fill = ColorAlpha(RAYWHITE, 0.06f);
-            DrawFilledHexagon(c, K_HEX_SIZE - 2, hover_fill);
+            DrawHexOutline(c, K_HEX_SIZE - 1, 2.0f, ColorAlpha(RAYWHITE, 0.25f * pulse));
+            DrawCircleV(c, 2, ColorAlpha(RAYWHITE, 0.4f));
+        } 
+        else 
+        {
+            DrawHexOutline(c, K_HEX_SIZE - 1, 1.5f, ColorAlpha(RAYWHITE, 0.10f));
         }
     }
 }

@@ -308,7 +308,7 @@ void Game::Draw() {
 
     bool has_selection = selected_gate_index >= 0;
     bool cell_occupied = hovered_cell.IsValid() && FindGateAt(hovered_cell.row, hovered_cell.col) != nullptr;
-    DrawGrid(hovered_cell, has_selection, cell_occupied);
+    DrawGrid(hovered_cell, has_selection, cell_occupied, anim_time);
 
     DrawAllWires(wires, gates, input_bits, gate_outputs, anim_time);
 
