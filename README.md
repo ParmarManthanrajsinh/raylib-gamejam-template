@@ -67,7 +67,7 @@ http://localhost:3000/raylib-game-template.html
 ```
 
 To serve manually on Linux:
-
+ 
 ```powershell
 npx serve build-web/raylib-game-template
 ```
