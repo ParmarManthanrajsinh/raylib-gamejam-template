@@ -42,7 +42,7 @@ _TODO: Add gameplay screenshots or animated GIFs._
 ### Developers
 
 - Manthan — Game Design & Logic
-- Dhaval — UI & Interaction
+- Dhaval — Memory Management
 - Nagendra — Circuit Evaluation
 - Nandana — Visual Effects & Art
 
