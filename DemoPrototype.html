@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hex Merge - Logic Gate Puzzle</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --cyan: #00f5d4;
+            --red: #ff0040;
+            --white: #ffffff;
+            --dim: #4a4a6a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0d0d1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Press Start 2P', 'Courier New', monospace;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+
+        canvas {
+            border: 2px solid #2a2a4a;
+            border-radius: 8px;
+            cursor: crosshair;
+            box-shadow: 0 0 40px rgba(0, 245, 212, 0.15), 0 0 80px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="game" width="720" height="720"></canvas>
+
+    <script>
+        (function() {
+            const canvas = document.getElementById('game');
+            const ctx = canvas.getContext('2d');
+
+            // ─────────────────────────────────────
+            // CONSTANTS
+            // ─────────────────────────────────────
+            const W = 720;
+            const H = 720;
+            const GRID_COLS = 8;
+            const GRID_ROWS = 8;
+            const HEX_SIZE = 36;
+            const SQRT3 = Math.sqrt(3);
+            const HEX_SPACING_X = HEX_SIZE * SQRT3;
+            const HEX_SPACING_Y = HEX_SIZE * 1.5;
+            
+            const GRID_W = (GRID_COLS - 1) * HEX_SPACING_X + HEX_SPACING_X / 2 + HEX_SIZE * SQRT3;
+            const GRID_H = (GRID_ROWS - 1) * HEX_SPACING_Y + HEX_SIZE * 2;
+
+            const INFO_BAR_H = 32;
+            const PALETTE_H = 88;
+            
+            // Perfectly centered layout
+            const INPUT_X = 50;
+            const INPUT_OUTPUT_PIN_X = 74;
+            
+            const GRID_X = 115;
+            const GRID_Y = INFO_BAR_H + Math.floor((H - INFO_BAR_H - PALETTE_H - GRID_H) / 2);
+            const PALETTE_Y = H - PALETTE_H;
+            
+            const OUTPUT_CENTER_X = 659;
+            const OUTPUT_CENTER_Y = GRID_Y + GRID_H / 2;
+            const OUTPUT_PIN_X = 624;
+
+            const PIN_RADIUS = 7;
+            const PIN_HIT_RADIUS = 12;
+
+            // ─────────────────────────────────────
+            // STATE
+            // ─────────────────────────────────────
+            let inputBits = [0, 0, 0, 0];
+            let targetHex = 6; // 0x6 as in the mockup
+            let gates = [];
+            let wires = [];
+            let gateIdCounter = 1;
+            let selectedGateType = null; // gate type string for placement
+            let wireDragState = null; // {fromType, fromId, fromPin, startX, startY}
+            let hoveredPin = null; // {type, id, pin, isInput}
+            let hoveredCell = null; // {row, col}
+            let mouseX = 0;
+            let mouseY = 0;
+            let animationTime = 0;
+            let solved = false;
+            let solvedPulse = 0;
+            let gateOutputs = {}; // keyed by gate id -> 0 or 1
+            let outputBits = [0, 0, 0, 0];
+
+            // ─────────────────────────────────────
+            // HEX GEOMETRY HELPERS
+            // ─────────────────────────────────────
+            function getHexCenter(row, col) {
+                return {
+                    x: GRID_X + col * HEX_SPACING_X + (row % 2) * (HEX_SPACING_X / 2),
+                    y: GRID_Y + row * HEX_SPACING_Y
+                };
+            }
+
+            function drawHexagonPath(cx, cy, size) {
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = Math.PI / 6 + (Math.PI / 3) * i;
+                    const vx = cx + size * Math.cos(angle);
+                    const vy = cy + size * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(vx, vy);
+                    else ctx.lineTo(vx, vy);
+                }
+                ctx.closePath();
+            }
+
+            function isPointInHex(px, py, cx, cy, size) {
+                const dx = Math.abs(px - cx);
+                const dy = Math.abs(py - cy);
+                const halfW = size * SQRT3 / 2;
+                if (dx > halfW || dy > size) return false;
+                if (dy <= size / 2) return true;
+                return dx <= SQRT3 * (size - dy);
+            }
+
+            // ─────────────────────────────────────
+            // GATE DEFINITIONS
+            // ─────────────────────────────────────
+            const GATE_TYPES = ['AND', 'OR', 'NOT', 'XOR', 'NAND', 'NOR', 'XNOR'];
+            const GATE_COLORS = {
+                'AND': '#ff6b6b',
+                'OR': '#ffa94d',
+                'NOT': '#ffd43b',
+                'XOR': '#69db7c',
+                'NAND': '#4dabf7',
+                'NOR': '#da77f2',
+                'XNOR': '#63e6be'
+            };
+
+            function getGateInputCount(type) {
+                return type === 'NOT' ? 1 : 2;
+            }
+
+            function evaluateGate(type, inputs) {
+                const a = inputs[0] || 0;
+                const b = inputs[1] || 0;
+                switch (type) {
+                    case 'AND':
+                        return (a === 1 && b === 1) ? 1 : 0;
+                    case 'OR':
+                        return (a === 1 || b === 1) ? 1 : 0;
+                    case 'NOT':
+                        return a === 1 ? 0 : 1;
+                    case 'XOR':
+                        return (a !== b) ? 1 : 0;
+                    case 'NAND':
+                        return (a === 1 && b === 1) ? 0 : 1;
+                    case 'NOR':
+                        return (a === 1 || b === 1) ? 0 : 1;
+                    case 'XNOR':
+                        return (a === b) ? 1 : 0;
+                    default:
+                        return 0;
+                }
+            }
+
+            // ─────────────────────────────────────
+            // PIN POSITION HELPERS
+            // ─────────────────────────────────────
+            function getInputNodeY(index) {
+                const spacing = GRID_H / 5;
+                return GRID_Y + spacing + index * spacing;
+            }
+
+            function getInputNodeOutputPin(index) {
+                return {
+                    x: INPUT_OUTPUT_PIN_X,
+                    y: getInputNodeY(index),
+                    type: 'input',
+                    id: index,
+                    pin: 0,
+                    isInput: false
+                };
+            }
+
+            function getGateCellBounds(gate) {
+                const c = getHexCenter(gate.row, gate.col);
+                const halfW = HEX_SIZE * SQRT3 / 2;
+                return {
+                    left: c.x - halfW,
+                    top: c.y - HEX_SIZE,
+                    right: c.x + halfW,
+                    bottom: c.y + HEX_SIZE,
+                    cx: c.x,
+                    cy: c.y
+                };
+            }
+
+            function getGateInputPinPos(gate, pinIndex) {
+                const b = getGateCellBounds(gate);
+                const inputCount = getGateInputCount(gate.type);
+                const pinX = b.cx - HEX_SIZE + 4;
+                if (inputCount === 1) {
+                    return { x: pinX, y: b.cy, type: 'gate', id: gate.id, pin: pinIndex, isInput: true };
+                }
+                const spacing = HEX_SIZE * SQRT3 * 0.55;
+                const startY = b.cy - spacing / 2;
+                const frac = (pinIndex + 0.5) / inputCount;
+                return {
+                    x: pinX,
+                    y: startY + frac * spacing,
+                    type: 'gate',
+                    id: gate.id,
+                    pin: pinIndex,
+                    isInput: true
+                };
+            }
+
+            function getGateOutputPinPos(gate) {
+                const b = getGateCellBounds(gate);
+                return { x: b.cx + HEX_SIZE - 4, y: b.cy, type: 'gate', id: gate.id, pin: 0, isInput: false };
+            }
+
+            function getOutputNodeInputPin(bitIndex) {
+                const spacing = 22;
+                const baseY = OUTPUT_CENTER_Y - (1.5 * spacing);
+                return {
+                    x: OUTPUT_PIN_X,
+                    y: baseY + bitIndex * spacing,
+                    type: 'output',
+                    id: 0,
+                    pin: bitIndex,
+                    isInput: true
+                };
+            }
+
+            function getAllPins() {
+                const pins = [];
+                // Input node output pins
+                for (let i = 0; i < 4; i++) {
+                    pins.push(getInputNodeOutputPin(i));
+                }
+                // Gate pins
+                for (const gate of gates) {
+                    const inputCount = getGateInputCount(gate.type);
+                    for (let p = 0; p < inputCount; p++) {
+                        pins.push(getGateInputPinPos(gate, p));
+                    }
+                    pins.push(getGateOutputPinPos(gate));
+                }
+                // Output node input pins
+                for (let b = 0; b < 4; b++) {
+                    pins.push(getOutputNodeInputPin(b));
+                }
+                return pins;
+            }
+
+            function findPinAt(mx, my) {
+                const pins = getAllPins();
+                let best = null;
+                let bestDist = PIN_HIT_RADIUS;
+                for (const pin of pins) {
+                    const dx = mx - pin.x;
+                    const dy = my - pin.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < bestDist) {
+                        bestDist = dist;
+                        best = pin;
+                    }
+                }
+                return best;
+            }
+
+            function findGateAt(row, col) {
+                return gates.find(g => g.row === row && g.col === col) || null;
+            }
+
+            function findGateById(id) {
+                return gates.find(g => g.id === id) || null;
+            }
+
+            function getGridCell(mx, my) {
+                const approxCol = Math.floor((mx - GRID_X) / HEX_SPACING_X);
+                const approxRow = Math.floor((my - GRID_Y) / HEX_SPACING_Y);
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        const row = approxRow + dr;
+                        const col = approxCol + dc;
+                        if (row < 0 || row >= GRID_ROWS || col < 0 || col >= GRID_COLS) continue;
+                        const c = getHexCenter(row, col);
+                        if (isPointInHex(mx, my, c.x, c.y, HEX_SIZE)) {
+                            return { row, col };
+                        }
+                    }
+                }
+                return null;
+            }
+
+            // ─────────────────────────────────────
+            // CIRCUIT EVALUATION
+            // ─────────────────────────────────────
+            function evaluateCircuit() {
+                // Reset
+                gateOutputs = {};
+                for (const gate of gates) {
+                    gateOutputs[gate.id] = 0;
+                }
+                outputBits = [0, 0, 0, 0];
+
+                // Build wire lookup: targetPinKey -> sourcePin
+                // targetPinKey: "type:id:pin" for input pins
+                const wireTargets = {};
+                for (const w of wires) {
+                    const key = `${w.toType}:${w.toId}:${w.toPin}`;
+                    wireTargets[key] = { type: w.fromType, id: w.fromId, pin: w.fromPin };
+                }
+
+                function getSourceValue(sourceType, sourceId, sourcePin) {
+                    if (sourceType === 'input') {
+                        return inputBits[sourceId] || 0;
+                    } else if (sourceType === 'gate') {
+                        return gateOutputs[sourceId] !== undefined ? gateOutputs[sourceId] : 0;
+                    }
+                    return 0;
+                }
+
+                // Iterative evaluation (enough passes for 8x8 grid max path length)
+                const maxIterations = gates.length + 10;
+                for (let iter = 0; iter < maxIterations; iter++) {
+                    let changed = false;
+
+                    // Evaluate all gates
+                    for (const gate of gates) {
+                        const inputCount = getGateInputCount(gate.type);
+                        const inputs = [];
+                        for (let p = 0; p < inputCount; p++) {
+                            const key = `gate:${gate.id}:${p}`;
+                            const src = wireTargets[key];
+                            if (src) {
+                                inputs.push(getSourceValue(src.type, src.id, src.pin));
+                            } else {
+                                inputs.push(0);
+                            }
+                        }
+                        const newOutput = evaluateGate(gate.type, inputs);
+                        if (gateOutputs[gate.id] !== newOutput) {
+                            gateOutputs[gate.id] = newOutput;
+                            changed = true;
+                        }
+                    }
+
+                    // Evaluate output bits
+                    for (let b = 0; b < 4; b++) {
+                        const key = `output:0:${b}`;
+                        const src = wireTargets[key];
+                        const newVal = src ? getSourceValue(src.type, src.id, src.pin) : 0;
+                        if (outputBits[b] !== newVal) {
+                            outputBits[b] = newVal;
+                            changed = true;
+                        }
+                    }
+
+                    if (!changed) break;
+                }
+
+                // Compute hex output
+                const hexVal = outputBits[0] + outputBits[1] * 2 + outputBits[2] * 4 + outputBits[3] * 8;
+                const wasSolved = solved;
+                solved = (hexVal === targetHex);
+                if (solved && !wasSolved) {
+                    solvedPulse = 1.0;
+                }
+                return hexVal;
+            }
+
+            // ─────────────────────────────────────
+            // WIRE MANAGEMENT
+            // ─────────────────────────────────────
+            function addWire(fromPin, toPin) {
+                // Remove any existing wire going to the same target pin
+                wires = wires.filter(w => {
+                    return !(w.toType === toPin.type && w.toId === toPin.id && w.toPin === toPin.pin);
+                });
+                // Remove duplicate (same from and to)
+                wires = wires.filter(w => {
+                    return !(w.fromType === fromPin.type && w.fromId === fromPin.id && w.fromPin === fromPin
+                        .pin &&
+                        w.toType === toPin.type && w.toId === toPin.id && w.toPin === toPin.pin);
+                });
+                wires.push({
+                    fromType: fromPin.type,
+                    fromId: fromPin.id,
+                    fromPin: fromPin.pin,
+                    toType: toPin.type,
+                    toId: toPin.id,
+                    toPin: toPin.pin
+                });
+                evaluateCircuit();
+            }
+
+            function removeWiresForGate(gateId) {
+                wires = wires.filter(w => {
+                    return !(w.fromType === 'gate' && w.fromId === gateId) &&
+                        !(w.toType === 'gate' && w.toId === gateId);
+                });
+            }
+
+            function getPinPosition(pinType, pinId, pinIndex, isInput) {
+                if (pinType === 'input') {
+                    return getInputNodeOutputPin(pinId);
+                } else if (pinType === 'gate') {
+                    const gate = findGateById(pinId);
+                    if (!gate) return null;
+                    if (isInput) {
+                        return getGateInputPinPos(gate, pinIndex);
+                    } else {
+                        return getGateOutputPinPos(gate);
+                    }
+                } else if (pinType === 'output') {
+                    return getOutputNodeInputPin(pinIndex);
+                }
+                return null;
+            }
+
+            // ─────────────────────────────────────
+            // DRAWING FUNCTIONS
+            // ─────────────────────────────────────
+            function drawBackground() {
+                // Main background
+                const grad = ctx.createLinearGradient(0, 0, 0, H);
+                grad.addColorStop(0, '#0a0a1a');
+                grad.addColorStop(1, '#15152a');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, W, H);
+
+                // Info bar
+                ctx.fillStyle = '#12122a';
+                ctx.fillRect(0, 0, W, INFO_BAR_H);
+                ctx.strokeStyle = '#2a2a4a';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, INFO_BAR_H);
+                ctx.lineTo(W, INFO_BAR_H);
+                ctx.stroke();
+
+                // Removed grid area background with glow border for cleaner look
+
+                // Lane guides from inputs to grid
+                for (let i = 0; i < 4; i++) {
+                    const y = getInputNodeY(i);
+                    const laneEndX = GRID_X - HEX_SIZE;
+                    ctx.strokeStyle = 'rgba(0, 245, 212, 0.07)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([4, 6]);
+                    ctx.beginPath();
+                    ctx.moveTo(INPUT_OUTPUT_PIN_X + 4, y);
+                    ctx.lineTo(laneEndX, y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // Lane guides from grid to output
+                const gridRightX = GRID_X + (GRID_COLS - 1) * HEX_SPACING_X + HEX_SPACING_X / 2 + HEX_SIZE * SQRT3 / 2;
+                for (let b = 0; b < 4; b++) {
+                    const pin = getOutputNodeInputPin(b);
+                    ctx.strokeStyle = 'rgba(0, 245, 212, 0.07)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([4, 6]);
+                    ctx.beginPath();
+                    ctx.moveTo(gridRightX + 4, pin.y);
+                    ctx.lineTo(pin.x - 6, pin.y);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+
+                // Palette area
+                ctx.fillStyle = '#101020';
+                ctx.fillRect(0, PALETTE_Y, W, PALETTE_H);
+                ctx.strokeStyle = '#22223a';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(0, PALETTE_Y);
+                ctx.lineTo(W, PALETTE_Y);
+                ctx.stroke();
+            }
+
+            function drawGrid() {
+                for (let row = 0; row < GRID_ROWS; row++) {
+                    for (let col = 0; col < GRID_COLS; col++) {
+                        const c = getHexCenter(row, col);
+
+                        // Hexagon fill (slight alternating shade)
+                        ctx.fillStyle = (row + col) % 2 === 0 ? '#151530' : '#121228';
+                        drawHexagonPath(c.x, c.y, HEX_SIZE - 1);
+                        ctx.fill();
+
+                        // Hexagon outline - brighter, thicker
+                        ctx.strokeStyle = '#2a3a4a';
+                        ctx.lineWidth = 1.5;
+                        drawHexagonPath(c.x, c.y, HEX_SIZE);
+                        ctx.stroke();
+
+                        // Subtle dot at center
+                        ctx.fillStyle = '#2a3a5a';
+                        ctx.beginPath();
+                        ctx.arc(c.x, c.y, 1.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                // Grid row labels (bit positions)
+                for (let row = 0; row < GRID_ROWS; row++) {
+                    const c = getHexCenter(row, 0);
+                    ctx.fillStyle = '#1a2a3a';
+                    ctx.font = '7px "Press Start 2P", monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                }
+
+                // Highlight hovered cell
+                if (hoveredCell && !findGateAt(hoveredCell.row, hoveredCell.col)) {
+                    const c = getHexCenter(hoveredCell.row, hoveredCell.col);
+                    if (selectedGateType) {
+                        ctx.fillStyle = 'rgba(0, 245, 212, 0.25)';
+                        drawHexagonPath(c.x, c.y, HEX_SIZE - 2);
+                        ctx.fill();
+                        ctx.strokeStyle = '#00f5d4';
+                        ctx.lineWidth = 2.5;
+                        ctx.setLineDash([5, 4]);
+                        drawHexagonPath(c.x, c.y, HEX_SIZE - 2);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    } else if (!findGateAt(hoveredCell.row, hoveredCell.col)) {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.06)';
+                        drawHexagonPath(c.x, c.y, HEX_SIZE - 2);
+                        ctx.fill();
+                    }
+                }
+            }
+
+            function drawInputNodes() {
+                for (let i = 0; i < 4; i++) {
+                    const y = getInputNodeY(i);
+                    const val = inputBits[i];
+
+                    // Node body
+                    const glow = val ? '#ff0040' : '#0044aa';
+                    const inner = val ? '#ff2040' : '#1a3a6a';
+                    const border = val ? '#ff6080' : '#3366aa';
+
+                    // Glow
+                    const grad = ctx.createRadialGradient(INPUT_X, y, 8, INPUT_X, y, 30);
+                    grad.addColorStop(0, glow);
+                    grad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(INPUT_X, y, 30, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Body
+                    ctx.fillStyle = inner;
+                    ctx.strokeStyle = border;
+                    ctx.lineWidth = 2.5;
+                    ctx.beginPath();
+                    ctx.arc(INPUT_X, y, 16, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Label
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '9px "Press Start 2P", monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('IN' + i, INPUT_X, y);
+
+                    // Output pin
+                    const pinX = INPUT_OUTPUT_PIN_X;
+                    const pinY = y;
+                    const isHovered = hoveredPin && hoveredPin.type === 'input' && hoveredPin.id === i && !hoveredPin
+                        .isInput;
+                    const isWireStart = wireDragState && wireDragState.fromType === 'input' && wireDragState.fromId === i;
+
+                    ctx.fillStyle = isHovered || isWireStart ? '#00f5d4' : (val ? '#ff6080' : '#5577bb');
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(pinX, pinY, PIN_RADIUS, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    if (isHovered || isWireStart) {
+                        ctx.strokeStyle = '#00f5d4';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(pinX, pinY, PIN_RADIUS + 3, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            function drawOutputNode() {
+                const cx = OUTPUT_CENTER_X;
+                const cy = OUTPUT_CENTER_Y;
+                const val = outputBits[0] + outputBits[1] * 2 + outputBits[2] * 4 + outputBits[3] * 8;
+                const match = (val === targetHex);
+
+                // Body glow
+                const glowColor = match ? '#00ff88' : '#334466';
+                const grad = ctx.createRadialGradient(cx, cy, 15, cx, cy, 50);
+                grad.addColorStop(0, match ? 'rgba(0,255,136,0.4)' : 'rgba(50,70,100,0.3)');
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.roundRect(cx - 40, cy - 55, 80, 110, 12);
+                ctx.fill();
+
+                // Body
+                ctx.fillStyle = '#1a1a3a';
+                ctx.strokeStyle = match ? '#00ff88' : '#3a4a6a';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.roundRect(cx - 35, cy - 50, 70, 100, 10);
+                ctx.fill();
+                ctx.stroke();
+
+                // Label
+                ctx.fillStyle = '#8899bb';
+                ctx.font = '8px "Press Start 2P", monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('OUTPUT', cx, cy - 28);
+
+                // Hex value
+                ctx.fillStyle = match ? '#00ff88' : '#ffffff';
+                ctx.font = '16px "Press Start 2P", monospace';
+                const hexStr = '0x' + val.toString(16).toUpperCase();
+                ctx.fillText(hexStr, cx, cy - 2);
+
+                // Bit indicators
+                for (let b = 0; b < 4; b++) {
+                    const bx = cx - 18 + b * 12;
+                    const by = cy + 22;
+                    ctx.fillStyle = outputBits[b] ? '#ff0040' : '#334466';
+                    ctx.strokeStyle = outputBits[b] ? '#ff6080' : '#445577';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.arc(bx, by, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Bit label
+                    ctx.fillStyle = '#667799';
+                    ctx.font = '6px "Press Start 2P", monospace';
+                    ctx.fillText('b' + b, bx, by + 10);
+                }
+
+                // Input pins
+                for (let b = 0; b < 4; b++) {
+                    const pin = getOutputNodeInputPin(b);
+                    const isHovered = hoveredPin && hoveredPin.type === 'output' && hoveredPin.pin === b && hoveredPin
+                        .isInput;
+                    const hasWire = wires.some(w => w.toType === 'output' && w.toId === 0 && w.toPin === b);
+
+                    ctx.fillStyle = isHovered ? '#00f5d4' : (hasWire ? '#ffaa00' : '#445577');
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(pin.x, pin.y, PIN_RADIUS, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    if (isHovered) {
+                        ctx.strokeStyle = hasWire ? '#ff0040' : '#00f5d4';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(pin.x, pin.y, PIN_RADIUS + 3, 0, Math.PI * 2);
+                        ctx.stroke();
+                        if (hasWire) {
+                            ctx.fillStyle = '#ff0040';
+                            ctx.font = '10px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText('×', pin.x, pin.y);
+                        }
+                    }
+                }
+
+                // Match indicator
+                if (match) {
+                    ctx.fillStyle = '#00ff88';
+                    ctx.font = '10px "Press Start 2P", monospace';
+                    ctx.fillText('✅', cx, cy + 40);
+                }
+            }
+
+            function drawGateShape(gate, x, y, w, h, outputVal) {
+                const type = gate.type;
+                const cx = x + w / 2;
+                const cy = y + h / 2;
+                const pad = 6;
+                const bx = x + pad;
+                const by = y + pad;
+                const bw = w - pad * 2;
+                const bh = h - pad * 2;
+
+                const activeColor = '#ff0040';
+                const inactiveColor = '#334466';
+                const bodyColor = outputVal === 1 ? '#3a1020' : '#1a1a35';
+                const borderColor = outputVal === 1 ? activeColor : '#445577';
+                const glowColor = outputVal === 1 ? 'rgba(255,0,64,0.5)' : 'transparent';
+
+                // Glow
+                if (outputVal === 1) {
+                    const grad = ctx.createRadialGradient(cx, cy, w * 0.3, cx, cy, w * 0.7);
+                    grad.addColorStop(0, glowColor);
+                    grad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.roundRect(x - 4, y - 4, w + 8, h + 8, 8);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = bodyColor;
+                ctx.strokeStyle = borderColor;
+                ctx.lineWidth = 2.5;
+
+                ctx.beginPath();
+                switch (type) {
+                    case 'AND':
+                        // Flat left, rounded right (D-shape)
+                        ctx.moveTo(bx, by);
+                        ctx.lineTo(bx, by + bh);
+                        ctx.arcTo(bx, by + bh, bx + bw * 0.6, by + bh, bw * 0.5);
+                        ctx.arcTo(bx + bw, by + bh, bx + bw, by, bw * 0.5);
+                        ctx.arcTo(bx + bw, by, bx + bw * 0.6, by, bw * 0.5);
+                        ctx.lineTo(bx, by);
+                        break;
+                    case 'OR':
+                        // Shield shape
+                        ctx.moveTo(bx + bw * 0.2, by);
+                        ctx.quadraticCurveTo(bx, cy, bx + bw * 0.2, by + bh);
+                        ctx.quadraticCurveTo(bx + bw * 0.7, by + bh, bx + bw, cy);
+                        ctx.quadraticCurveTo(bx + bw * 0.7, by, bx + bw * 0.2, by);
+                        break;
+                    case 'NOT':
+                        // Triangle with circle
+                        ctx.moveTo(bx, by + bh * 0.15);
+                        ctx.lineTo(bx + bw * 0.75, cy);
+                        ctx.lineTo(bx, by + bh * 0.85);
+                        ctx.closePath();
+                        break;
+                    case 'XOR':
+                        // Double-curved left, curved right
+                        ctx.moveTo(bx + bw * 0.25, by);
+                        ctx.quadraticCurveTo(bx + bw * 0.05, cy, bx + bw * 0.25, by + bh);
+                        ctx.quadraticCurveTo(bx + bw * 0.15, cy, bx + bw * 0.25, by);
+                        ctx.moveTo(bx + bw * 0.35, by);
+                        ctx.quadraticCurveTo(bx + bw * 0.1, cy, bx + bw * 0.35, by + bh);
+                        ctx.quadraticCurveTo(bx + bw * 0.7, by + bh, bx + bw, cy);
+                        ctx.quadraticCurveTo(bx + bw * 0.7, by, bx + bw * 0.35, by);
+                        break;
+                    case 'NAND':
+                        // AND shape with bubble
+                        ctx.moveTo(bx, by);
+                        ctx.lineTo(bx, by + bh);
+                        ctx.arcTo(bx, by + bh, bx + bw * 0.55, by + bh, bw * 0.5);
+                        ctx.arcTo(bx + bw * 0.9, by + bh, bx + bw * 0.9, by, bw * 0.5);
+                        ctx.arcTo(bx + bw * 0.9, by, bx + bw * 0.55, by, bw * 0.5);
+                        ctx.lineTo(bx, by);
+                        break;
+                    case 'NOR':
+                        // OR shape with bubble
+                        ctx.moveTo(bx + bw * 0.2, by);
+                        ctx.quadraticCurveTo(bx, cy, bx + bw * 0.2, by + bh);
+                        ctx.quadraticCurveTo(bx + bw * 0.65, by + bh, bx + bw * 0.88, cy);
+                        ctx.quadraticCurveTo(bx + bw * 0.65, by, bx + bw * 0.2, by);
+                        break;
+                    case 'XNOR':
+                        // XOR shape with bubble
+                        ctx.moveTo(bx + bw * 0.25, by);
+                        ctx.quadraticCurveTo(bx + bw * 0.05, cy, bx + bw * 0.25, by + bh);
+                        ctx.quadraticCurveTo(bx + bw * 0.15, cy, bx + bw * 0.25, by);
+                        ctx.moveTo(bx + bw * 0.35, by);
+                        ctx.quadraticCurveTo(bx + bw * 0.1, cy, bx + bw * 0.35, by + bh);
+                        ctx.quadraticCurveTo(bx + bw * 0.65, by + bh, bx + bw * 0.88, cy);
+                        ctx.quadraticCurveTo(bx + bw * 0.65, by, bx + bw * 0.35, by);
+                        break;
+                    default:
+                        ctx.roundRect(bx, by, bw, bh, 6);
+                }
+                ctx.fill();
+                ctx.stroke();
+
+                // Draw bubble for NAND, NOR, XNOR
+                if (['NAND', 'NOR', 'XNOR'].includes(type)) {
+                    const bubbleX = type === 'NOR' || type === 'XNOR' ? bx + bw * 0.9 : bx + bw * 0.92;
+                    const bubbleY = cy;
+                    ctx.fillStyle = bodyColor;
+                    ctx.strokeStyle = borderColor;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(bubbleX, bubbleY, bw * 0.12, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                }
+
+                // Label
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '7px "Press Start 2P", monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const shortLabel = type.length > 4 ? type.substring(0, 4) : type;
+                let displayLabel = shortLabel;
+                if (gate.id !== undefined && gate.id !== -1) {
+                    displayLabel += gate.id;
+                }
+                ctx.fillText(displayLabel, cx, cy + (type === 'NOT' ? -2 : 0));
+            }
+
+            function drawGates() {
+                for (const gate of gates) {
+                    const b = getGateCellBounds(gate);
+                    const outputVal = gateOutputs[gate.id] !== undefined ? gateOutputs[gate.id] : 0;
+                    const isHovered = hoveredCell && hoveredCell.row === gate.row && hoveredCell.col === gate.col;
+
+                    // Highlight on hover
+                    if (isHovered) {
+                        ctx.fillStyle = 'rgba(0, 245, 212, 0.1)';
+                        drawHexagonPath(b.cx, b.cy, HEX_SIZE - 2);
+                        ctx.fill();
+                        ctx.strokeStyle = '#00f5d4';
+                        ctx.lineWidth = 2;
+                        ctx.setLineDash([3, 3]);
+                        drawHexagonPath(b.cx, b.cy, HEX_SIZE - 2);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+
+                    const gw = HEX_SIZE * 1.3;
+                    const gh = HEX_SIZE * SQRT3 * 0.75;
+                    drawGateShape(gate, b.cx - gw / 2, b.cy - gh / 2, gw, gh, outputVal);
+
+                    // Input pins
+                    const inputCount = getGateInputCount(gate.type);
+                    for (let p = 0; p < inputCount; p++) {
+                        const pin = getGateInputPinPos(gate, p);
+                        const isHov = hoveredPin && hoveredPin.type === 'gate' && hoveredPin.id === gate.id && hoveredPin
+                            .pin === p && hoveredPin.isInput;
+                        const hasWire = wires.some(w => w.toType === 'gate' && w.toId === gate.id && w.toPin === p);
+
+                        ctx.fillStyle = isHov ? '#00f5d4' : (hasWire ? '#ffaa00' : '#445577');
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 1.5;
+                        ctx.beginPath();
+                        ctx.arc(pin.x, pin.y, PIN_RADIUS, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.stroke();
+
+                        if (isHov) {
+                            ctx.strokeStyle = hasWire ? '#ff0040' : '#00f5d4';
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.arc(pin.x, pin.y, PIN_RADIUS + 3, 0, Math.PI * 2);
+                            ctx.stroke();
+                            if (hasWire) {
+                                ctx.fillStyle = '#ff0040';
+                                ctx.font = '10px Arial';
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillText('×', pin.x, pin.y);
+                            }
+                        }
+                    }
+
+                    // Output pin
+                    const outPin = getGateOutputPinPos(gate);
+                    const isHovOut = hoveredPin && hoveredPin.type === 'gate' && hoveredPin.id === gate.id && !hoveredPin
+                        .isInput;
+                    const isWireStart = wireDragState && wireDragState.fromType === 'gate' && wireDragState.fromId === gate
+                        .id;
+                    const hasOutWire = wires.some(w => w.fromType === 'gate' && w.fromId === gate.id);
+
+                    ctx.fillStyle = isHovOut || isWireStart ? '#00f5d4' : (outputVal ? '#ff6080' : (hasOutWire ?
+                        '#ffaa00' : '#5577bb'));
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 1.5;
+                    ctx.beginPath();
+                    ctx.arc(outPin.x, outPin.y, PIN_RADIUS, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    if (isHovOut || isWireStart) {
+                        ctx.strokeStyle = '#00f5d4';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.arc(outPin.x, outPin.y, PIN_RADIUS + 3, 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            function drawWires() {
+                // Draw all established wires
+                for (const w of wires) {
+                    const fromPos = getPinPosition(w.fromType, w.fromId, w.fromPin, false);
+                    const toPos = getPinPosition(w.toType, w.toId, w.toPin, true);
+                    if (!fromPos || !toPos) continue;
+
+                    // Determine signal value
+                    let signalVal = 0;
+                    if (w.fromType === 'input') signalVal = inputBits[w.fromId] || 0;
+                    else if (w.fromType === 'gate') signalVal = gateOutputs[w.fromId] !== undefined ? gateOutputs[w
+                        .fromId] : 0;
+
+                    const pulse = signalVal === 1 ? 0.6 + 0.4 * Math.sin(animationTime * 6 + w.fromId * 1.7) : 0;
+                    const alpha = signalVal === 1 ? 0.8 + pulse * 0.2 : 0.6;
+                    const color = signalVal === 1 ? '#ff0040' : '#667799';
+                    const lineWidth = signalVal === 1 ? 3 + pulse * 2 : 2;
+
+                    drawOrthogonalWire(fromPos.x, fromPos.y, toPos.x, toPos.y, color, alpha, lineWidth, signalVal === 1,
+                        pulse);
+                }
+
+                // Draw ghost wire during dragging
+                if (wireDragState) {
+                    const fromPos = getPinPosition(wireDragState.fromType, wireDragState.fromId, wireDragState.fromPin,
+                        false);
+                    if (fromPos) {
+                        drawOrthogonalWire(fromPos.x, fromPos.y, mouseX, mouseY, '#00f5d4', 0.6, 2, false, 0);
+                        // Dashed
+                        ctx.setLineDash([8, 6]);
+                        ctx.strokeStyle = 'rgba(0, 245, 212, 0.5)';
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        const midX = fromPos.x + 20;
+                        ctx.moveTo(fromPos.x, fromPos.y);
+                        ctx.lineTo(midX, fromPos.y);
+                        ctx.lineTo(midX, mouseY);
+                        ctx.lineTo(mouseX, mouseY);
+                        ctx.stroke();
+                        ctx.setLineDash([]);
+                    }
+                }
+            }
+
+            function drawOrthogonalWire(x1, y1, x2, y2, color, alpha, lineWidth, glow, pulse) {
+                const midX = x1 + 20;
+                const targetApproachX = x2 - 16;
+
+                // Choose routing: if target is far enough right, use standard routing
+                let routeX;
+                if (targetApproachX > midX + 10) {
+                    routeX = midX;
+                } else {
+                    routeX = Math.min(midX, x1 + Math.abs(x2 - x1) * 0.4);
+                }
+
+                ctx.strokeStyle = color;
+                ctx.globalAlpha = alpha;
+                ctx.lineWidth = lineWidth;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                // Glow layer
+                if (glow && pulse > 0.3) {
+                    ctx.strokeStyle = 'rgba(255, 0, 64, 0.4)';
+                    ctx.lineWidth = lineWidth + 4;
+                    ctx.beginPath();
+                    ctx.moveTo(x1, y1);
+                    ctx.lineTo(routeX, y1);
+                    ctx.lineTo(routeX, y2);
+                    ctx.lineTo(x2, y2);
+                    ctx.stroke();
+                }
+
+                // Main line
+                ctx.strokeStyle = color;
+                ctx.lineWidth = lineWidth;
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(routeX, y1);
+                ctx.lineTo(routeX, y2);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+
+                // Signal dots along the wire (for active signals)
+                if (glow) {
+                    const totalLength = Math.abs(routeX - x1) + Math.abs(y2 - y1) + Math.abs(x2 - routeX);
+                    const numDots = Math.floor(totalLength / 25);
+                    for (let i = 0; i < numDots; i++) {
+                        const t = ((i / numDots) + animationTime * 0.8) % 1.0;
+                        let dotX, dotY;
+                        const seg1Len = Math.abs(routeX - x1);
+                        const seg2Len = Math.abs(y2 - y1);
+                        const totalLen = seg1Len + seg2Len + Math.abs(x2 - routeX);
+                        const dist = t * totalLen;
+
+                        if (dist < seg1Len) {
+                            dotX = x1 + (routeX - x1) * (dist / seg1Len);
+                            dotY = y1;
+                        } else if (dist < seg1Len + seg2Len) {
+                            dotX = routeX;
+                            dotY = y1 + (y2 - y1) * ((dist - seg1Len) / seg2Len);
+                        } else {
+                            const rem = dist - seg1Len - seg2Len;
+                            const seg3Len = Math.abs(x2 - routeX);
+                            dotX = routeX + (x2 - routeX) * (rem / Math.max(seg3Len, 1));
+                            dotY = y2;
+                        }
+
+                        ctx.fillStyle = '#ffffff';
+                        ctx.globalAlpha = 0.8;
+                        ctx.beginPath();
+                        ctx.arc(dotX, dotY, 3, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+
+                ctx.globalAlpha = 1;
+            }
+
+            function drawPalette() {
+                const palY = PALETTE_Y;
+                const gateBtnW = 72;
+                const gateBtnH = 48;
+                const totalWidth = GATE_TYPES.length * gateBtnW + (GATE_TYPES.length - 1) * 8;
+                const startX = (W - totalWidth) / 2;
+
+                for (let i = 0; i < GATE_TYPES.length; i++) {
+                    const type = GATE_TYPES[i];
+                    const bx = startX + i * (gateBtnW + 8);
+                    const by = palY + 8;
+                    const isSelected = selectedGateType === type;
+
+                    // Button background
+                    ctx.fillStyle = isSelected ? '#1a3a2a' : 'transparent';
+                    ctx.strokeStyle = isSelected ? '#00f5d4' : '#3a3a55';
+                    ctx.lineWidth = isSelected ? 2 : 1;
+                    ctx.beginPath();
+                    ctx.roundRect(bx, by, gateBtnW, gateBtnH, 8);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Mini gate shape
+                    const miniGate = { type, id: -1, row: 0, col: 0 };
+                    drawGateShape(miniGate, bx + 16, by + 4, gateBtnW - 32, gateBtnH - 20, 0);
+
+                    // Label
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = '7px "Press Start 2P", monospace';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(type, bx + gateBtnW / 2, by + gateBtnH - 8);
+                }
+
+                // Clear Grid button
+                const clearW = 120;
+                const clearH = 20;
+                const clearX = (W - clearW) / 2;
+                const clearY = palY + gateBtnH + 12;
+                ctx.fillStyle = 'transparent';
+                ctx.strokeStyle = '#ff4444';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(clearX, clearY, clearW, clearH, 4);
+                ctx.fill();
+                ctx.stroke();
+                ctx.fillStyle = '#ff6666';
+                ctx.font = '8px "Press Start 2P", monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('CLEAR GRID', clearX + clearW / 2, clearY + clearH / 2);
+            }
+
+            function drawInfoBar() {
+                const hexVal = outputBits[0] + outputBits[1] * 2 + outputBits[2] * 4 + outputBits[3] * 8;
+                const match = (hexVal === targetHex);
+
+                // Target
+                ctx.fillStyle = '#8899bb';
+                ctx.font = '10px "Press Start 2P", monospace';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Target: 0x' + targetHex.toString(16).toUpperCase(), 20, INFO_BAR_H / 2);
+
+                // Output
+                const outText = 'Output: 0x' + hexVal.toString(16).toUpperCase();
+                const outX = W / 2;
+                ctx.fillStyle = match ? '#00ff88' : '#ffffff';
+                ctx.textAlign = 'center';
+                ctx.fillText(outText, outX, INFO_BAR_H / 2);
+
+                // Status
+                if (match) {
+                    ctx.fillStyle = '#00ff88';
+                    ctx.font = '11px "Press Start 2P", monospace';
+                    ctx.textAlign = 'right';
+                    const pulse = 0.7 + 0.3 * Math.sin(animationTime * 4);
+                    ctx.globalAlpha = pulse;
+                    ctx.fillText('✅ SOLVED!', W - 20, INFO_BAR_H / 2);
+                    ctx.globalAlpha = 1;
+
+                    // Glow bar
+                    const glowGrad = ctx.createLinearGradient(0, 0, 0, INFO_BAR_H);
+                    glowGrad.addColorStop(0, 'rgba(0,255,136,0.3)');
+                    glowGrad.addColorStop(1, 'transparent');
+                    ctx.fillStyle = glowGrad;
+                    ctx.fillRect(0, 0, W, INFO_BAR_H);
+                }
+            }
+
+            function drawAll() {
+                ctx.clearRect(0, 0, W, H);
+                drawBackground();
+                drawGrid();
+                drawWires();
+                drawGates();
+                drawInputNodes();
+                drawOutputNode();
+                drawPalette();
+                drawInfoBar();
+
+                // Cursor indicator for wire dragging
+                if (wireDragState) {
+                    ctx.fillStyle = '#00f5d4';
+                    ctx.globalAlpha = 0.7;
+                    ctx.beginPath();
+                    ctx.arc(mouseX, mouseY, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+
+            // ─────────────────────────────────────
+            // INTERACTION HANDLERS
+            // ─────────────────────────────────────
+            function handleClick(mx, my) {
+                // Check if click is on an input node to toggle it
+                for (let i = 0; i < 4; i++) {
+                    const y = getInputNodeY(i);
+                    const dx = mx - INPUT_X;
+                    const dy = my - y;
+                    if (Math.sqrt(dx * dx + dy * dy) <= 20) {
+                        inputBits[i] = inputBits[i] === 0 ? 1 : 0;
+                        evaluateCircuit();
+                        return;
+                    }
+                }
+
+                // Check if click is on a pin
+                const clickedPin = findPinAt(mx, my);
+
+                // If we're in wire drag state
+                if (wireDragState) {
+                    if (clickedPin && clickedPin.isInput) {
+                        // Complete the wire
+                        const fromPin = {
+                            type: wireDragState.fromType,
+                            id: wireDragState.fromId,
+                            pin: wireDragState.fromPin,
+                            isInput: false
+                        };
+                        const toPin = {
+                            type: clickedPin.type,
+                            id: clickedPin.id,
+                            pin: clickedPin.pin,
+                            isInput: true
+                        };
+                        // Prevent connecting to self
+                        if (!(fromPin.type === toPin.type && fromPin.id === toPin.id)) {
+                            addWire(fromPin, toPin);
+                        }
+                        wireDragState = null;
+                        evaluateCircuit();
+                        return;
+                    } else if (clickedPin && !clickedPin.isInput) {
+                        // Clicked another output pin - switch source
+                        wireDragState = {
+                            fromType: clickedPin.type,
+                            fromId: clickedPin.id,
+                            fromPin: clickedPin.pin,
+                            startX: clickedPin.x,
+                            startY: clickedPin.y
+                        };
+                        return;
+                    } else {
+                        // Clicked empty space - cancel
+                        wireDragState = null;
+                        // Fall through to check other clicks
+                    }
+                }
+
+                // Check if click is on an output pin (start wire)
+                if (clickedPin && !clickedPin.isInput) {
+                    wireDragState = {
+                        fromType: clickedPin.type,
+                        fromId: clickedPin.id,
+                        fromPin: clickedPin.pin,
+                        startX: clickedPin.x,
+                        startY: clickedPin.y
+                    };
+                    selectedGateType = null;
+                    return;
+                }
+
+                // Check if click is on an input pin (but we're not dragging - ignore unless we want to remove wire)
+                if (clickedPin && clickedPin.isInput && !wireDragState) {
+                    // Could allow clicking input pin to remove its wire
+                    const existingWire = wires.findIndex(w =>
+                        w.toType === clickedPin.type && w.toId === clickedPin.id && w.toPin === clickedPin.pin
+                    );
+                    if (existingWire >= 0) {
+                        wires.splice(existingWire, 1);
+                        evaluateCircuit();
+                        return;
+                    }
+                }
+
+                // Check palette clicks
+                const palY = PALETTE_Y;
+                const gateBtnW = 72;
+                const gateBtnH = 48;
+                const totalWidth = GATE_TYPES.length * gateBtnW + (GATE_TYPES.length - 1) * 8;
+                const startX = (W - totalWidth) / 2;
+
+                for (let i = 0; i < GATE_TYPES.length; i++) {
+                    const bx = startX + i * (gateBtnW + 8);
+                    const by = palY + 8;
+                    if (mx >= bx && mx <= bx + gateBtnW && my >= by && my <= by + gateBtnH) {
+                        // Toggle gate selection
+                        if (selectedGateType === GATE_TYPES[i]) {
+                            selectedGateType = null;
+                        } else {
+                            selectedGateType = GATE_TYPES[i];
+                            wireDragState = null;
+                        }
+                        return;
+                    }
+                }
+
+                // Check Clear Grid button
+                const clearW = 120;
+                const clearH = 20;
+                const clearX = (W - clearW) / 2;
+                const clearY = palY + gateBtnH + 12;
+                if (mx >= clearX && mx <= clearX + clearW && my >= clearY && my <= clearY + clearH) {
+                    gates = [];
+                    wires = [];
+                    gateOutputs = {};
+                    outputBits = [0, 0, 0, 0];
+                    gateIdCounter = 1;
+                    selectedGateType = null;
+                    wireDragState = null;
+                    solved = false;
+                    evaluateCircuit();
+                    return;
+                }
+
+                // Check grid cell click for gate placement
+                const cell = getGridCell(mx, my);
+                if (cell && selectedGateType) {
+                    if (!findGateAt(cell.row, cell.col)) {
+                        const newGate = {
+                            id: gateIdCounter++,
+                            type: selectedGateType,
+                            row: cell.row,
+                            col: cell.col
+                        };
+                        gates.push(newGate);
+                        gateOutputs[newGate.id] = 0;
+                        evaluateCircuit();
+                        // Keep selection for multiple placement
+                    }
+                    return;
+                }
+
+                // Click on empty space cancels selection
+                if (!clickedPin && !cell) {
+                    selectedGateType = null;
+                    wireDragState = null;
+                }
+            }
+
+            function handleRightClick(mx, my) {
+                // Check if right-click on a gate
+                const cell = getGridCell(mx, my);
+                if (cell) {
+                    const gate = findGateAt(cell.row, cell.col);
+                    if (gate) {
+                        removeWiresForGate(gate.id);
+                        gates = gates.filter(g => g.id !== gate.id);
+                        delete gateOutputs[gate.id];
+                        evaluateCircuit();
+                        return;
+                    }
+                }
+
+                // Right-click cancels current operations
+                selectedGateType = null;
+                wireDragState = null;
+            }
+
+            function handleMouseMove(mx, my) {
+                mouseX = mx;
+                mouseY = my;
+                hoveredPin = findPinAt(mx, my);
+                hoveredCell = getGridCell(mx, my);
+
+                // Update cursor
+                if (wireDragState) {
+                    canvas.style.cursor = 'crosshair';
+                } else if (hoveredPin && hoveredPin.isInput) {
+                    const hasWire = wires.some(w => w.toType === hoveredPin.type && w.toId === hoveredPin.id && w.toPin === hoveredPin.pin);
+                    canvas.style.cursor = hasWire ? 'no-drop' : 'cell';
+                } else if (hoveredPin && !hoveredPin.isInput) {
+                    canvas.style.cursor = 'pointer';
+                } else if (hoveredCell && selectedGateType && !findGateAt(hoveredCell.row, hoveredCell.col)) {
+                    canvas.style.cursor = 'copy';
+                } else if (hoveredCell && findGateAt(hoveredCell.row, hoveredCell.col)) {
+                    canvas.style.cursor = 'pointer';
+                } else {
+                    canvas.style.cursor = 'default';
+                }
+            }
+
+            // ─────────────────────────────────────
+            // EVENT LISTENERS
+            // ─────────────────────────────────────
+            canvas.addEventListener('mousedown', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                if (e.button === 0) {
+                    handleClick(mx, my);
+                } else if (e.button === 2) {
+                    handleRightClick(mx, my);
+                }
+            });
+
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                handleMouseMove(mx, my);
+            });
+
+            canvas.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+
+            // Touch support
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                const mx = touch.clientX - rect.left;
+                const my = touch.clientY - rect.top;
+                handleClick(mx, my);
+            }, { passive: false });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const touch = e.touches[0];
+                const mx = touch.clientX - rect.left;
+                const my = touch.clientY - rect.top;
+                handleMouseMove(mx, my);
+            }, { passive: false });
+
+            canvas.addEventListener('touchend', (e) => {
+                e.preventDefault();
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    selectedGateType = null;
+                    wireDragState = null;
+                }
+                // Number keys 1-4 toggle inputs
+                if (e.key >= '1' && e.key <= '4') {
+                    const idx = parseInt(e.key) - 1;
+                    inputBits[idx] = inputBits[idx] === 0 ? 1 : 0;
+                    evaluateCircuit();
+                }
+                // 'R' key to randomize target
+                if (e.key === 'r' || e.key === 'R') {
+                    targetHex = Math.floor(Math.random() * 16);
+                    evaluateCircuit();
+                }
+                // 'T' key to toggle target to specific value for testing
+                if (e.key === 't' || e.key === 'T') {
+                    targetHex = (targetHex + 1) % 16;
+                    evaluateCircuit();
+                }
+            });
+
+            // ─────────────────────────────────────
+            // MAIN LOOP
+            // ─────────────────────────────────────
+            function update(dt) {
+                animationTime += dt;
+                if (solved && solvedPulse > 0) {
+                    solvedPulse = Math.max(0, solvedPulse - dt * 0.8);
+                }
+            }
+
+            function render() {
+                drawAll();
+            }
+
+            function gameLoop(timestamp) {
+                const dt = Math.min(0.1, (timestamp - (gameLoop.lastTimestamp || timestamp)) / 1000);
+                gameLoop.lastTimestamp = timestamp;
+                update(dt);
+                render();
+                requestAnimationFrame(gameLoop);
+            }
+            gameLoop.lastTimestamp = performance.now();
+
+            // ─────────────────────────────────────
+            // INITIALIZATION
+            // ─────────────────────────────────────
+            function init() {
+                // Randomize target hex
+                targetHex = Math.floor(Math.random() * 16);
+                // For demo, set a specific interesting target
+                targetHex = 6; // 0x6 - as shown in the mockup
+                inputBits = [0, 1, 1, 0]; // Pre-set inputs to 0110 = 0x6 for instant solve demo
+                // Actually, let's start with all zeros so the player has to work
+                inputBits = [0, 0, 0, 0];
+                targetHex = Math.floor(Math.random() * 16);
+                // Make sure it's not 0 for a more interesting puzzle
+                if (targetHex === 0) targetHex = 10; // 0xA
+                gates = [];
+                wires = [];
+                gateOutputs = {};
+                outputBits = [0, 0, 0, 0];
+                gateIdCounter = 1;
+                selectedGateType = null;
+                wireDragState = null;
+                solved = false;
+                solvedPulse = 0;
+                evaluateCircuit();
+            }
+
+            init();
+            requestAnimationFrame(gameLoop);
+
+            // Expose for console debugging
+            window.hexMerge = {
+                getState: () => ({
+                    inputBits,
+                    targetHex,
+                    gates,
+                    wires,
+                    outputBits,
+                    solved,
+                    gateOutputs,
+                    selectedGateType,
+                    wireDragState
+                }),
+                reset: init,
+                setTarget: (h) => { targetHex = h;
+                    evaluateCircuit(); },
+                toggleInput: (i) => { inputBits[i] = inputBits[i] === 0 ? 1 : 0;
+                    evaluateCircuit(); },
+                evaluate: evaluateCircuit,
+            };
+
+            console.log('🔌 Hex Merge ready!');
+            console.log('  Target: 0x' + targetHex.toString(16).toUpperCase());
+            console.log('  Click gates in palette → click grid to place');
+            console.log('  Click output pins → click input pins to wire');
+            console.log('  Right-click gate to delete');
+            console.log('  Keys 1-4 toggle inputs | R randomizes target | Esc cancels');
+            console.log('  window.hexMerge for debug access');
+        })();
+    </script>
+</body>
+</html>
