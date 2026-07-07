@@ -1,40 +1,63 @@
 #pragma once
-
 #include <raylib.h>
 #include <vector>
+#include <unordered_map>
+#include "hex_grid.hpp"
+#include "gates.hpp"
+#include "circuit.hpp"
+#include "wires.hpp"
+#include "ui.hpp"
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
 #endif
 
-constexpr int screen_width = 720;
-constexpr int screen_height = 720;
+struct PinHit {
+    int  source_type = -1;
+    int  source_id   = 0;
+    int  pin_index   = 0;
+    bool is_input    = false;
 
-enum class GameScreen { Logo, Title, Gameplay, Ending };
-class Gates {
-public:
-  Gates(float x, float y, float size);
-  ~Gates();
-  void Draw();
-  // public for now
-  float posx;
-  float posy;
-  float size;
-  bool hover;
-  bool selected;
+    bool IsValid() const { return source_type >= 0; }
 };
+
 class Game {
 public:
-  Game();
-  ~Game();
+    Game();
+    ~Game();
 
-  void Update();
-  void Draw();
-  bool ShouldClose() const;
+    void Update();
+    void Draw();
+    bool ShouldClose() const;
 
 private:
-  RenderTexture2D target{};
-  int frame_counter{};
-  Vector2 MousePosition;
-  GameScreen current_screen{GameScreen::Logo};
-  std::vector<Gates> gates;
+    // Core state
+    std::vector<Gate> gates;
+    std::vector<Wire> wires;
+    int input_bits[4];
+    int output_bits[4];
+    std::unordered_map<int, int> gate_outputs;
+    int target_hex;
+    int gate_id_counter;
+    bool solved;
+    float anim_time;
+    float solved_pulse;
+
+    // UI state
+    int selected_gate_index;   // -1 = none
+    WireDragState wire_drag_state;
+    HexCell hovered_cell;
+    PinHit hovered_pin;
+    Vector2 mouse_pos;
+
+    // Helpers
+    void Reset();
+    void Evaluate();
+    Gate* FindGateAt(int row, int col);
+    Gate* FindGateById(int id);
+    PinHit FindPinAt(Vector2 pos);
+    void RemoveWiresForGate(int gate_id);
+
+    // Event handlers
+    void HandleClick(Vector2 pos);
+    void HandleRightClick(Vector2 pos);
 };

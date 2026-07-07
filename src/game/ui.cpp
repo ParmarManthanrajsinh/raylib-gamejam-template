@@ -1,0 +1,231 @@
+#include "ui.hpp"
+#include "hex_grid.hpp"
+#include <cmath>
+#include <cstring>
+#include <raylib.h>
+
+void DrawBackground() {
+    // Main gradient
+    DrawRectangleGradientV(0, 0, 720, 720, { 10, 10, 26, 255 }, { 21, 21, 42, 255 });
+
+    // Info bar background
+    DrawRectangle(0, 0, 720, (int)K_INFO_BAR_H, { 18, 18, 42, 255 });
+    DrawLine(0, (int)K_INFO_BAR_H, 720, (int)K_INFO_BAR_H, { 42, 42, 74, 255 });
+
+    // Grid area background with border
+    Rectangle grid_rect = GetGridRect();
+    Color grid_bg = { 13, 13, 32, 255 };
+    DrawRectangleRec(grid_rect, grid_bg);
+    DrawRectangleLinesEx(grid_rect, 2, { 42, 58, 74, 255 });
+
+    // Lane guides from inputs to grid
+    Color lane_color = ColorAlpha({ 0, 245, 212, 255 }, 0.07f);
+    float grid_left_x = K_GRID_X - K_HEX_SIZE;
+    for (int i = 0; i < 4; i++) {
+        float y = GetInputNodeY(i);
+        DrawLineEx({ K_INPUT_PIN_X + 4, y }, { grid_left_x, y }, 1, lane_color);
+    }
+
+    // Lane guides from grid to output
+    float grid_right_x = K_GRID_X + (K_GRID_COLS - 1) * K_SPACING_X + K_SPACING_X / 2 + K_HEX_SIZE * K_SQRT3 / 2;
+    for (int b = 0; b < 4; b++) {
+        Vector2 pin = GetOutputNodeInputPin(b);
+        DrawLineEx({ grid_right_x + 4, pin.y }, { pin.x - 6, pin.y }, 1, lane_color);
+    }
+
+    // Palette area background
+    DrawRectangle(0, (int)K_PALETTE_Y - 4, 720, (int)K_PALETTE_H + 8, { 18, 18, 42, 255 });
+    DrawLine(0, (int)K_PALETTE_Y - 4, 720, (int)K_PALETTE_Y - 4, { 42, 42, 74, 255 });
+}
+
+void DrawInfoBar(int target_hex, int current_hex, bool solved, float anim_time) {
+    char target_text[32];
+    snprintf(target_text, sizeof(target_text), "Target: 0x%X", target_hex);
+    DrawText(target_text, 20, 16, 10, { 136, 153, 187, 255 });
+
+    char output_text[32];
+    snprintf(output_text, sizeof(output_text), "Output: 0x%X", current_hex);
+    Color output_color = solved ? Color{ 0, 255, 136, 255 } : WHITE;
+    DrawText(output_text, 280, 16, 10, output_color);
+
+    if (solved) {
+        float pulse = 0.7f + 0.3f * sinf(anim_time * 4);
+        Color solved_color = { 0, 255, 136, (unsigned char)(255 * pulse) };
+        DrawText("SOLVED!", 600, 14, 11, solved_color);
+    }
+}
+
+static void DrawNodeBody(float x, float y, float radius, bool active, bool is_hovered) {
+    Color glow_color = active ? Color{ 255, 0, 64, 60 } : Color{ 0, 68, 170, 60 };
+    Color inner_color = active ? Color{ 255, 32, 64, 255 } : Color{ 26, 58, 106, 255 };
+    Color border_color = active ? Color{ 255, 96, 128, 255 } : Color{ 51, 102, 170, 255 };
+
+    // Glow (layered circles)
+    for (int r = 30; r > 10; r -= 4) {
+        Color c = glow_color;
+        c.a = (unsigned char)((float)c.a * (1.0f - (float)(r - 10) / 20.0f));
+        DrawCircleV({ x, y }, (float)r, c);
+    }
+
+    // Body
+    DrawCircleV({ x, y }, radius, inner_color);
+    DrawCircleV({ x, y }, radius, border_color);
+
+    if (is_hovered) {
+        DrawCircleV({ x, y }, radius + 3, ColorAlpha(SKYBLUE, 0.5f));
+    }
+}
+
+static void DrawPin(Vector2 pos, bool active, bool is_hovered, bool is_connected, bool show_delete) {
+    Color fill;
+    if (is_hovered) {
+        fill = SKYBLUE;
+    } else if (is_connected) {
+        fill = active ? Color{ 255, 96, 128, 255 } : Color{ 255, 170, 0, 255 };
+    } else {
+        fill = active ? Color{ 255, 96, 128, 255 } : Color{ 85, 119, 187, 255 };
+    }
+
+    DrawCircleV(pos, K_PIN_RADIUS, fill);
+    DrawCircleV(pos, K_PIN_RADIUS, WHITE);
+
+    if (is_hovered) {
+        Color ring = show_delete ? Color{ 255, 0, 64, 255 } : SKYBLUE;
+        DrawCircleLines((int)pos.x, (int)pos.y, K_PIN_RADIUS + 3, ring);
+        if (show_delete) {
+            DrawText("X", (int)pos.x - 4, (int)pos.y - 5, 10, RED);
+        }
+    }
+}
+
+void DrawInputNodes(int input_bits[4], const Pin* hovered_pin) {
+    for (int i = 0; i < 4; i++) {
+        float y = GetInputNodeY(i);
+        bool active = input_bits[i] == 1;
+        bool pin_hovered = hovered_pin && hovered_pin->source_type == 0
+                         && hovered_pin->source_id == i && !hovered_pin->is_input;
+
+        // Node body
+        DrawNodeBody(K_INPUT_X, y, 16, active, false);
+
+        // Label
+        char label[8];
+        snprintf(label, sizeof(label), "IN%d", i);
+        DrawText(label, (int)K_INPUT_X - 10, (int)y - 5, 9, WHITE);
+
+        // Output pin
+        Vector2 pin_pos = GetInputNodeOutputPin(i);
+        DrawPin(pin_pos, active, pin_hovered, false, false);
+    }
+}
+
+void DrawOutputNode(int output_bits[4], int target_hex, const Pin* hovered_pin, bool has_wire) {
+    float cx = K_OUTPUT_CENTER_X;
+    float cy = K_OUTPUT_CENTER_Y;
+    int val = output_bits[0] + output_bits[1] * 2 + output_bits[2] * 4 + output_bits[3] * 8;
+    bool match = (val == target_hex);
+
+    // Body glow
+    Color glow_col = match ? ColorAlpha({ 0, 255, 136, 255 }, 0.4f) : ColorAlpha({ 50, 70, 100, 255 }, 0.3f);
+    for (int r = 50; r > 15; r -= 5) {
+        Color c = glow_col;
+        c.a = (unsigned char)((float)c.a * (1.0f - (float)(r - 15) / 35.0f));
+        DrawCircleV({ cx, cy }, (float)r, c);
+    }
+
+    // Body
+    DrawRectangleRounded({ cx - 35, cy - 50, 70, 100 }, 0.15f, 8, { 26, 26, 58, 255 });
+    Color border = match ? Color{ 0, 255, 136, 255 } : Color{ 58, 74, 106, 255 };
+    DrawRectangleRoundedLines({ cx - 35, cy - 50, 70, 100 }, 0.15f, 8, border);
+
+    // Label
+    DrawText("OUTPUT", (int)cx - 32, (int)cy - 28, 8, { 136, 153, 187, 255 });
+
+    // Hex value
+    char hex_text[16];
+    snprintf(hex_text, sizeof(hex_text), "0x%X", val);
+    Color hex_color = match ? Color{ 0, 255, 136, 255 } : WHITE;
+    DrawText(hex_text, (int)cx - 24, (int)cy - 6, 16, hex_color);
+
+    // Bit indicators
+    for (int b = 0; b < 4; b++) {
+        float bx = cx - 18 + b * 12;
+        float by = cy + 22;
+        Color bit_color = output_bits[b] ? Color{ 255, 0, 64, 255 } : Color{ 51, 68, 102, 255 };
+        Color bit_border = output_bits[b] ? Color{ 255, 96, 128, 255 } : Color{ 68, 85, 119, 255 };
+        DrawCircleV({ bx, by }, 4, bit_color);
+        DrawCircleV({ bx, by }, 4, bit_border);
+
+        char bit_label[4];
+        snprintf(bit_label, sizeof(bit_label), "b%d", b);
+        DrawText(bit_label, (int)bx - 4, (int)by + 8, 6, { 102, 119, 153, 255 });
+    }
+
+    // Input pins
+    for (int b = 0; b < 4; b++) {
+        Vector2 pin_pos = GetOutputNodeInputPin(b);
+        bool pin_hovered = hovered_pin && hovered_pin->source_type == 2
+                        && hovered_pin->pin_index == b && hovered_pin->is_input;
+        DrawPin(pin_pos, output_bits[b] == 1, pin_hovered, has_wire, has_wire);
+    }
+}
+
+static Rectangle GetPaletteButtonRect(int index) {
+    float btn_w = 82;
+    float spacing = 6;
+    float total_width = K_GATE_COUNT * btn_w + (K_GATE_COUNT - 1) * spacing;
+    float start_x = (720 - total_width) / 2;
+    return { start_x + index * (btn_w + spacing), K_PALETTE_Y + 4, btn_w, 58 };
+}
+
+int PickPaletteGate(Vector2 mouse_pos) {
+    for (int i = 0; i < K_GATE_COUNT; i++) {
+        Rectangle r = GetPaletteButtonRect(i);
+        if (CheckCollisionPointRec(mouse_pos, r)) return i;
+    }
+    return -1;
+}
+
+Rectangle GetClearButtonRect() {
+    return { (720 - 140) / 2, K_PALETTE_Y + 58 + 14, 140, 28 };
+}
+
+void DrawPalette(int selected_index) {
+    for (int i = 0; i < K_GATE_COUNT; i++) {
+        GateType type = (GateType)i;
+        Rectangle r = GetPaletteButtonRect(i);
+        bool is_selected = (i == selected_index);
+
+        // Button background
+        Color bg = is_selected ? Color{ 26, 58, 42, 255 } : Color{ 26, 26, 53, 255 };
+        Color border = is_selected ? SKYBLUE : Color{ 58, 58, 85, 255 };
+        float thickness = is_selected ? 3.0f : 1.5f;
+
+        DrawRectangleRounded(r, 0.15f, 6, bg);
+        DrawRectangleRoundedLines(r, 0.15f, 6, border);
+
+        // Mini gate shape
+        Gate mini_gate;
+        mini_gate.type = type;
+        mini_gate.id = -1;
+        mini_gate.row = 0;
+        mini_gate.col = 0;
+
+        float mini_w = r.width - 36;
+        float mini_h = r.height - 22;
+        DrawGateShape(mini_gate, r.x + 18, r.y + 4, mini_w, mini_h, 0);
+
+        // Label
+        const char* label = GateTypeToString(type);
+        Vector2 text_size = MeasureTextEx(GetFontDefault(), label, 7, 1);
+        DrawText(label, (int)(r.x + r.width / 2 - text_size.x / 2),
+                 (int)(r.y + r.height - 10), 7, WHITE);
+    }
+
+    // Clear Grid button
+    Rectangle clear_r = GetClearButtonRect();
+    DrawRectangleRounded(clear_r, 0.12f, 6, Color{ 42, 26, 26, 255 });
+    DrawRectangleRoundedLines(clear_r, 0.12f, 6, Color{ 255, 68, 68, 255 });
+    DrawText("CLEAR GRID", (int)(clear_r.x + 140 / 2 - 54),
+             (int)(clear_r.y + 28 / 2 - 5), 8, Color{ 255, 102, 102, 255 });
+}

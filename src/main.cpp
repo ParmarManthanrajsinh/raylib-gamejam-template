@@ -1,4 +1,5 @@
 #include "game/game.hpp"
+#include "game/hex_grid.hpp"
 
 static Game *GamePtr = nullptr;
 
@@ -17,7 +18,7 @@ int main()
     SetTraceLogLevel(LOG_NONE);
 #endif
 
-    InitWindow(screen_width, screen_height, "Our raylib gamejam template");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hex Merge");
 
     Game game;
     GamePtr = &game;
