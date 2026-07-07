@@ -1,5 +1,6 @@
 #include "ui.hpp"
 #include "hex_grid.hpp"
+#include "text_util.hpp"
 #include <cmath>
 #include <cstring>
 #include <raylib.h>
@@ -42,19 +43,20 @@ void DrawBackground() {
 }
 
 void DrawInfoBar(int target_hex, int current_hex, bool solved, float anim_time) {
+    Font font = GetFontDefault();
     char target_text[32];
     snprintf(target_text, sizeof(target_text), "Target: 0x%X", target_hex);
-    DrawText(target_text, 20, 16, 10, { 136, 153, 187, 255 });
+    DrawTextShadowed(font, target_text, 20, 16, 10, { 136, 153, 187, 255 });
 
     char output_text[32];
     snprintf(output_text, sizeof(output_text), "Output: 0x%X", current_hex);
     Color output_color = solved ? Color{ 0, 255, 136, 255 } : WHITE;
-    DrawText(output_text, 280, 16, 10, output_color);
+    DrawTextShadowed(font, output_text, 280, 16, 10, output_color);
 
     if (solved) {
         float pulse = 0.7f + 0.3f * sinf(anim_time * 4);
         Color solved_color = { 0, 255, 136, (unsigned char)(255 * pulse) };
-        DrawText("SOLVED!", 600, 14, 11, solved_color);
+        DrawTextShadowed(font, "SOLVED!", 600, 14, 11, solved_color);
     }
 }
 
@@ -96,7 +98,7 @@ static void DrawPin(Vector2 pos, bool active, bool is_hovered, bool is_connected
         Color ring = show_delete ? Color{ 255, 0, 64, 255 } : SKYBLUE;
         DrawCircleLines((int)pos.x, (int)pos.y, K_PIN_RADIUS + 3, ring);
         if (show_delete) {
-            DrawText("X", (int)pos.x - 4, (int)pos.y - 5, 10, RED);
+            DrawTextShadowed(GetFontDefault(), "X", (int)pos.x - 4, (int)pos.y - 5, 10, RED);
         }
     }
 }
@@ -114,7 +116,7 @@ void DrawInputNodes(int input_bits[4], const Pin* hovered_pin) {
         // Label
         char label[8];
         snprintf(label, sizeof(label), "IN%d", i);
-        DrawText(label, (int)K_INPUT_X - 10, (int)y - 5, 9, WHITE);
+        DrawTextShadowed(GetFontDefault(), label, (int)K_INPUT_X - 10, (int)y - 5, 9, WHITE);
 
         // Output pin
         Vector2 pin_pos = GetInputNodeOutputPin(i);
@@ -141,14 +143,13 @@ void DrawOutputNode(int output_bits[4], int target_hex, const Pin* hovered_pin, 
     Color border = match ? Color{ 0, 255, 136, 255 } : Color{ 58, 74, 106, 255 };
     DrawRectangleRoundedLines({ cx - 35, cy - 50, 70, 100 }, 0.15f, 8, border);
 
-    // Label
-    DrawText("OUTPUT", (int)cx - 32, (int)cy - 28, 8, { 136, 153, 187, 255 });
+    Font font = GetFontDefault();
+    DrawTextShadowed(font, "OUTPUT", (int)cx - 32, (int)cy - 28, 8, { 136, 153, 187, 255 });
 
-    // Hex value
     char hex_text[16];
     snprintf(hex_text, sizeof(hex_text), "0x%X", val);
     Color hex_color = match ? Color{ 0, 255, 136, 255 } : WHITE;
-    DrawText(hex_text, (int)cx - 24, (int)cy - 6, 16, hex_color);
+    DrawTextShadowed(font, hex_text, (int)cx - 24, (int)cy - 6, 16, hex_color);
 
     // Bit indicators
     for (int b = 0; b < 4; b++) {
@@ -161,7 +162,7 @@ void DrawOutputNode(int output_bits[4], int target_hex, const Pin* hovered_pin, 
 
         char bit_label[4];
         snprintf(bit_label, sizeof(bit_label), "b%d", b);
-        DrawText(bit_label, (int)bx - 4, (int)by + 8, 6, { 102, 119, 153, 255 });
+        DrawTextShadowed(GetFontDefault(), bit_label, (int)bx - 4, (int)by + 8, 6, { 102, 119, 153, 255 });
     }
 
     // Input pins
@@ -212,15 +213,11 @@ void DrawPalette(int selected_index) {
         DrawRectangleRoundedLines(r, 0.15f, 6, border);
 
         const char* label = GateTypeToString(type);
-        Vector2 text_size = MeasureTextEx(GetFontDefault(), label, 9, 1);
-        DrawText(label, (int)(r.x + r.width / 2 - text_size.x / 2),
-                 (int)(r.y + r.height / 2 - text_size.y / 2), 9, WHITE);
+        DrawTextCentered(GetFontDefault(), label, r, 9, WHITE);
     }
 
     Rectangle clear_r = GetClearButtonRect();
     DrawRectangleRounded(clear_r, 0.15f, 6, Color{ 42, 26, 26, 255 });
     DrawRectangleRoundedLines(clear_r, 0.15f, 6, Color{ 255, 68, 68, 255 });
-    Vector2 clear_ts = MeasureTextEx(GetFontDefault(), "CLEAR", 9, 1);
-    DrawText("CLEAR", (int)(clear_r.x + clear_r.width / 2 - clear_ts.x / 2),
-             (int)(clear_r.y + clear_r.height / 2 - clear_ts.y / 2), 9, Color{ 255, 102, 102, 255 });
+    DrawTextCentered(GetFontDefault(), "CLEAR", clear_r, 9, Color{ 255, 102, 102, 255 });
 }

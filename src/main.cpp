@@ -1,5 +1,6 @@
 #include "game/game.hpp"
 #include "game/hex_grid.hpp"
+#include "game/audio.hpp"
 
 static void UpdateDrawFrame(Game *game)
 {
@@ -21,6 +22,7 @@ int main()
 #endif
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hex Merge");
+    InitAudio();
 
     Game game;
 
@@ -35,6 +37,7 @@ int main()
     }
 #endif
 
+    ShutdownAudio();
     CloseWindow();
 
     return 0;

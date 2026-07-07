@@ -55,7 +55,7 @@ int EvaluateCircuit(
             int inputs[2] = { 0, 0 };
 
             for (int p = 0; p < input_count; p++) {
-                int key = (1 << 16) | (gate.id << 8) | p;
+                int key = (0 << 16) | (gate.id << 8) | p;
                 auto it = wire_targets.find(key);
                 if (it != wire_targets.end()) {
                     inputs[p] = get_source_value(it->second.type, it->second.id, it->second.pin);
@@ -77,7 +77,7 @@ int EvaluateCircuit(
 
         // Evaluate output bits
         for (int b = 0; b < 4; b++) {
-            int key = (2 << 16) | (0 << 8) | b;
+            int key = (1 << 16) | (0 << 8) | b;
             auto it = wire_targets.find(key);
             int new_val = 0;
             if (it != wire_targets.end()) {

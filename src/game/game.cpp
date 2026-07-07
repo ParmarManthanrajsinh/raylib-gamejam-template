@@ -4,6 +4,8 @@
 #include "circuit.hpp"
 #include "wires.hpp"
 #include "ui.hpp"
+#include "audio.hpp"
+#include "text_util.hpp"
 #include <cmath>
 // #include <cstdio>
 #include <algorithm>
@@ -66,7 +68,10 @@ void Game::Evaluate()
     int hex_val = EvaluateCircuit(gates, wires, input_bits, gate_outputs, output_bits);
     bool was_solved = solved;
     solved = (hex_val == target_hex);
-    if (solved && !was_solved) solved_pulse = 1.0f;
+    if (solved && !was_solved) {
+        solved_pulse = 1.0f;
+        PlaySfx(SfxType::SOLVED);
+    }
 }
 
 Gate* Game::FindGateAt(int row, int col) 
@@ -144,6 +149,7 @@ void Game::HandleClick(Vector2 pos)
         if (Dist(pos, { K_INPUT_X, GetInputNodeY(i) }) <= 20) 
         {
             input_bits[i] ^= 1;
+            PlaySfx(SfxType::TOGGLE_INPUT);
             Evaluate();
             return;
         }
@@ -178,6 +184,7 @@ void Game::HandleClick(Vector2 pos)
                     wires.end()
                 );
                 wires.push_back(w);
+                PlaySfx(SfxType::CONNECT_WIRE);
             }
             wire_drag_state = {};
             Evaluate();
@@ -214,12 +221,14 @@ void Game::HandleClick(Vector2 pos)
     // Click input pin to remove its wire
     if (clicked_pin.IsValid() && clicked_pin.is_input) {
         int target_type = (clicked_pin.source_type == 1) ? 0 : 1;
+        int old_count = (int)wires.size();
         wires.erase(
             std::remove_if(wires.begin(), wires.end(),
                 [&](const Wire& ex) {
                     return ex.to_type == target_type && ex.to_id == clicked_pin.source_id && ex.to_pin == clicked_pin.pin_index;
                 }),
             wires.end());
+        if ((int)wires.size() < old_count) PlaySfx(SfxType::DISCONNECT_WIRE);
         Evaluate();
         return;
     }
@@ -234,6 +243,7 @@ void Game::HandleClick(Vector2 pos)
 
     // Clear button
     if (CheckCollisionPointRec(pos, GetClearButtonRect())) {
+        PlaySfx(SfxType::REMOVE_GATE);
         Reset();
         return;
     }
@@ -248,12 +258,12 @@ void Game::HandleClick(Vector2 pos)
         ng.col  = cell.col;
         gates.push_back(ng);
         gate_outputs[ng.id] = 0;
+        PlaySfx(SfxType::PLACE_GATE);
         Evaluate();
         return;
     }
 
     if (!clicked_pin.IsValid() && !cell.IsValid()) {
-        selected_gate_index = -1;
         wire_drag_state = {};
     }
 }
@@ -267,6 +277,7 @@ void Game::HandleRightClick(Vector2 pos) {
             gate_outputs.erase(gate->id);
             gates.erase(std::remove_if(gates.begin(), gates.end(),
                 [&](const Gate& g) { return g.id == gate->id; }), gates.end());
+            PlaySfx(SfxType::REMOVE_GATE);
             Evaluate();
             return;
         }
@@ -346,7 +357,53 @@ void Game::Draw() {
         DrawCircleLines((int)op.x, (int)op.y, K_PIN_RADIUS, WHITE);
     }
 
-    // Cast PinHit to the Pin* expected by UI (same layout, just different struct)
+    // Ghost gate attached to cursor
+    if (selected_gate_index >= 0) {
+        GateType ft = (GateType)selected_gate_index;
+        Gate fg = { 0, ft, 0, 0 };
+        float gw = K_HEX_SIZE * 1.3f;
+        float gh = K_HEX_SIZE * K_SQRT3 * 0.75f;
+        float pulse = 0.6f + 0.4f * sinf(anim_time * 4);
+
+        if (hovered_cell.IsValid() && !cell_occupied) {
+            Vector2 c = GetHexCenter(hovered_cell.row, hovered_cell.col);
+
+            DrawFilledHexagon(c, K_HEX_SIZE + 4, ColorAlpha(SKYBLUE, 0.06f * pulse));
+            DrawFilledHexagon(c, K_HEX_SIZE - 2, ColorAlpha(SKYBLUE, 0.2f * pulse));
+            DrawHexOutline(c, K_HEX_SIZE - 1, 3.0f, ColorAlpha(SKYBLUE, 0.8f * pulse));
+
+            DrawGateShape(fg, c.x - gw/2, c.y - gh/2, gw, gh, 0, 0.75f);
+
+            DrawCircleV(c, 3, ColorAlpha(SKYBLUE, 0.9f));
+            DrawCircleLines((int)c.x, (int)c.y, 7, ColorAlpha(SKYBLUE, 0.5f * pulse));
+
+        } else if (hovered_cell.IsValid()) {
+            Vector2 c = GetHexCenter(hovered_cell.row, hovered_cell.col);
+
+            DrawFilledHexagon(c, K_HEX_SIZE + 4, ColorAlpha(RED, 0.06f));
+            DrawFilledHexagon(c, K_HEX_SIZE - 2, ColorAlpha(RED, 0.12f));
+            DrawHexOutline(c, K_HEX_SIZE - 1, 2.5f, ColorAlpha(RED, 0.5f * pulse));
+
+            DrawGateShape(fg, c.x - gw/2, c.y - gh/2, gw, gh, 0, 0.4f);
+
+            DrawLineEx({ c.x - 10, c.y - 10 }, { c.x + 10, c.y + 10 }, 2, ColorAlpha(RED, 0.5f * pulse));
+            DrawLineEx({ c.x + 10, c.y - 10 }, { c.x - 10, c.y + 10 }, 2, ColorAlpha(RED, 0.5f * pulse));
+
+        } else {
+            float s = 0.55f;
+            float bob = sinf(anim_time * 3) * 2;
+            Vector2 gp = { mouse_pos.x, mouse_pos.y + bob };
+
+            DrawCircleV(gp, 14, ColorAlpha(SKYBLUE, 0.08f));
+            DrawGateShape(fg, gp.x - gw*s/2, gp.y - gh*s/2, gw*s, gh*s, 0, 0.45f);
+
+            const char* name = GateTypeToString(ft);
+            Font font = GetFontDefault();
+            Vector2 ts = MeasureTextEx(font, name, 8, 1);
+            DrawTextShadowed(font, name, (int)(gp.x - ts.x/2), (int)(gp.y + gh*s/2 + 6), 8, ColorAlpha(WHITE, 0.5f));
+        }
+    }
+
     Pin stub_pin;
     Pin* hover_pin_ptr = nullptr;
     if (hovered_pin.IsValid()) {

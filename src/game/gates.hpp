@@ -48,4 +48,4 @@ float   GetInputNodeY(int index);
 Vector2 GetOutputNodeInputPin(int bit_index);
 
 // Rendering
-void DrawGateShape(const Gate& gate, float x, float y, float w, float h, int output_val);
+void DrawGateShape(const Gate& gate, float x, float y, float w, float h, int output_val, float alpha = 1.0f);

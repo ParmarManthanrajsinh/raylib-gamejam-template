@@ -1,5 +1,6 @@
 #include "gates.hpp"
 #include "hex_grid.hpp"
+#include "text_util.hpp"
 #include <cmath>
 #include <raylib.h>
 
@@ -72,7 +73,7 @@ static void DrawPolyOutline(const Vector2* verts, int count, Color color, float 
     }
 }
 
-void DrawGateShape(const Gate& gate, float x, float y, float w, float h, int output_val) {
+void DrawGateShape(const Gate& gate, float x, float y, float w, float h, int output_val, float alpha) {
     float cx = x + w / 2;
     float cy = y + h / 2;
     float hw = w / 2;
@@ -80,6 +81,10 @@ void DrawGateShape(const Gate& gate, float x, float y, float w, float h, int out
 
     Color body   = output_val ? k_body_on  : k_body_off;
     Color border = output_val ? k_border_on : k_border_off;
+    if (alpha < 1.0f) {
+        body.a   = (unsigned char)((float)body.a   * alpha);
+        border.a = (unsigned char)((float)border.a * alpha);
+    }
 
     // Glow for active gates
     if (output_val) {
@@ -187,11 +192,8 @@ void DrawGateShape(const Gate& gate, float x, float y, float w, float h, int out
         }
     }
 
-    // Label
     const char* label = GateTypeToString(gate.type);
-    Font font = GetFontDefault();
     int font_size = (int)(hh * 0.55f);
     if (font_size < 8) font_size = 8;
-    Vector2 text_size = MeasureTextEx(font, label, (float)font_size, 1);
-    DrawText(label, (int)(cx - text_size.x / 2), (int)(cy - text_size.y / 2), font_size, k_label);
+    DrawTextCentered(GetFontDefault(), label, { x, y, w, h }, font_size, k_label);
 }
