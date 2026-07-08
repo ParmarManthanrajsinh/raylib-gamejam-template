@@ -1,6 +1,6 @@
-#include "gates.hpp"
-#include "hex_grid.hpp"
-#include "text_util.hpp"
+#include "gates.h"
+#include "hex_grid.h"
+#include "text_util.h"
 #include <cmath>
 #include <raylib.h>
 

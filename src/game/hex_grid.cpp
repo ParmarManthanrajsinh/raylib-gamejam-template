@@ -1,4 +1,4 @@
-#include "hex_grid.hpp"
+#include "hex_grid.h"
 #include <cmath>
 #include <raylib.h>
 

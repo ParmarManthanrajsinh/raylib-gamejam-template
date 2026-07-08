@@ -1,6 +1,6 @@
-#include "ui.hpp"
-#include "hex_grid.hpp"
-#include "text_util.hpp"
+#include "ui.h"
+#include "hex_grid.h"
+#include "text_util.h"
 #include <cmath>
 #include <cstring>
 #include <raylib.h>

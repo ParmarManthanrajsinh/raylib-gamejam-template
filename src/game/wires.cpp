@@ -1,17 +1,23 @@
-#include "wires.hpp"
-#include "hex_grid.hpp"
+#include "wires.h"
+#include "hex_grid.h" // IWYU pragma: keep
 #include <cmath>
-#include <algorithm>
+#include <algorithm> // IWYU pragma: keep
 #include <raylib.h>
 
-static Vector2 GetWireSourcePos(const Wire& w,
-                                 const std::vector<Gate>& gates,
-                                 const int input_bits[4]) {
-    if (w.from_type == 0) { // Input node
+static Vector2 GetWireSourcePos
+(
+    const Wire& w,
+    const std::vector<Gate>& gates,
+    const int input_bits[4]
+) {
+    if (w.from_type == 0) 
+    { 
         return GetInputNodeOutputPin(w.from_id);
     }
-    if (w.from_type == 1) { // Gate
-        for (const auto& g : gates) {
+    if (w.from_type == 1) 
+    { 
+        for (const auto& g : gates) 
+        {
             if (g.id == w.from_id) return GetGateOutputPinPos(g);
         }
     }

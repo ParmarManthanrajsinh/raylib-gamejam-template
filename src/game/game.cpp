@@ -1,11 +1,11 @@
-#include "game.hpp"
-#include "hex_grid.hpp"
-#include "gates.hpp"
-#include "circuit.hpp"
-#include "wires.hpp"
-#include "ui.hpp"
-#include "audio.hpp"
-#include "text_util.hpp"
+#include "game.h"
+#include "hex_grid.h"
+#include "gates.h"
+#include "circuit.h"
+#include "wires.h"
+#include "ui.h"
+#include "audio.h"
+#include "text_util.h"
 #include <cmath>
 // #include <cstdio>
 #include <algorithm>
