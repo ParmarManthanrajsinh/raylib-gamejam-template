@@ -1,12 +1,12 @@
 #pragma once
 
 #include <raylib.h>
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
-#include "hex_grid.h"
-#include "gates.h"
 #include "circuit.h"
+#include "gates.h"
+#include "hex_grid.h"
 #include "wires.h"
 // #include "ui.hpp"
 
@@ -14,19 +14,22 @@
 #include <emscripten/emscripten.h>
 #endif
 
-struct t_PinHit 
+struct t_PinHit
 {
-    int  source_type = -1;
-    int  source_id   = 0;
-    int  pin_index   = 0;
-    bool is_input    = false;
+    int source_type = -1;
+    int source_id = 0;
+    int pin_index = 0;
+    bool is_input = false;
 
-    bool IsValid() const { return source_type >= 0; }
+    bool IsValid() const
+    {
+        return source_type >= 0;
+    }
 };
 
-class Game 
+class Game
 {
-public:
+  public:
     Game();
     ~Game();
 
@@ -34,7 +37,7 @@ public:
     void Draw();
     bool ShouldClose() const;
 
-private:
+  private:
     // Core state
     std::vector<t_Gate> gates;
     std::vector<t_Wire> wires;
@@ -48,9 +51,9 @@ private:
     float solved_pulse;
 
     // UI state
-    int selected_gate_index;   // -1 = none
-    WireDragState wire_drag_state;
-    HexCell hovered_cell;
+    int selected_gate_index; // -1 = none
+    t_WireDragState wire_drag_state;
+    t_HexCell hovered_cell;
     t_PinHit hovered_pin;
     Vector2 mouse_pos;
 

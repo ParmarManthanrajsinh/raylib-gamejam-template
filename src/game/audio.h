@@ -1,6 +1,6 @@
 #pragma once
 
-enum class SfxType 
+enum class SfxType
 {
     PLACE_GATE,
     REMOVE_GATE,
