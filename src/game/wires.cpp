@@ -6,8 +6,8 @@
 
 static Vector2 GetWireSourcePos
 (
-    const Wire& w,
-    const std::vector<Gate>& gates,
+    const t_Wire& w,
+    const std::vector<t_Gate>& gates,
     const int input_bits[4]
 ) {
     if (w.from_type == 0) 
@@ -24,8 +24,8 @@ static Vector2 GetWireSourcePos
     return {};
 }
 
-static Vector2 GetWireTargetPos(const Wire& w,
-                                 const std::vector<Gate>& gates) {
+static Vector2 GetWireTargetPos(const t_Wire& w,
+                                 const std::vector<t_Gate>& gates) {
     if (w.to_type == 0) { // Gate input
         for (const auto& g : gates) {
             if (g.id == w.to_id) return GetGateInputPinPos(g, w.to_pin);
@@ -37,7 +37,7 @@ static Vector2 GetWireTargetPos(const Wire& w,
     return {};
 }
 
-static int GetWireSignal(const Wire& w,
+static int GetWireSignal(const t_Wire& w,
                           const int input_bits[4],
                           const std::unordered_map<int, int>& gate_outputs) {
     if (w.from_type == 0) return input_bits[w.from_id];
@@ -106,15 +106,15 @@ static void DrawOrthogonalWire(Vector2 p1, Vector2 p2, Color color, float alpha,
     }
 }
 
-void DrawWire(const Wire& w, int signal_val, float anim_time) {
+void DrawWire(const t_Wire& w, int signal_val, float anim_time) {
     (void)w;
     (void)signal_val;
     (void)anim_time;
     // This function is kept for the unified draw below
 }
 
-void DrawAllWires(const std::vector<Wire>& wires,
-                  const std::vector<Gate>& gates,
+void DrawAllWires(const std::vector<t_Wire>& wires,
+                  const std::vector<t_Gate>& gates,
                   const int input_bits[4],
                   const std::unordered_map<int, int>& gate_outputs,
                   float anim_time) {

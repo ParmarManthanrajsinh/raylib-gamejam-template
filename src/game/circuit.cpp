@@ -20,8 +20,8 @@ namespace
 
 int EvaluateCircuit
 (
-    const std::vector<Gate>& gates,
-    const std::vector<Wire>& wires,
+    const std::vector<t_Gate>& gates,
+    const std::vector<t_Wire>& wires,
     const int input_bits[4],
     std::unordered_map<int, int>& gate_outputs,
     int output_bits[4]

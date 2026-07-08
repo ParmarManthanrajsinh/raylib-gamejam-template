@@ -14,7 +14,7 @@
 #include <emscripten/emscripten.h>
 #endif
 
-struct PinHit 
+struct t_PinHit 
 {
     int  source_type = -1;
     int  source_id   = 0;
@@ -36,8 +36,8 @@ public:
 
 private:
     // Core state
-    std::vector<Gate> gates;
-    std::vector<Wire> wires;
+    std::vector<t_Gate> gates;
+    std::vector<t_Wire> wires;
     int input_bits[4];
     int output_bits[4];
     std::unordered_map<int, int> gate_outputs;
@@ -51,15 +51,15 @@ private:
     int selected_gate_index;   // -1 = none
     WireDragState wire_drag_state;
     HexCell hovered_cell;
-    PinHit hovered_pin;
+    t_PinHit hovered_pin;
     Vector2 mouse_pos;
 
     // Helpers
     void Reset();
     void Evaluate();
-    Gate* FindGateAt(int row, int col);
-    Gate* FindGateById(int id);
-    PinHit FindPinAt(Vector2 pos);
+    t_Gate* FindGateAt(int row, int col);
+    t_Gate* FindGateById(int id);
+    t_PinHit FindPinAt(Vector2 pos);
     void RemoveWiresForGate(int gate_id);
 
     // Event handlers

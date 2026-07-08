@@ -2,16 +2,17 @@
 #include "hex_grid.h"
 #include "text_util.h"
 #include <cmath>
-#include <cstring>
+#include <cstring> // IWYU pragma: keep
 #include <raylib.h>
 
-void DrawBackground() {
+void DrawBackground() 
+{
     // Main gradient
     DrawRectangleGradientV(0, 0, 720, 720, { 10, 10, 26, 255 }, { 21, 21, 42, 255 });
 
     // Info bar background
-    DrawRectangle(0, 0, 720, (int)K_INFO_BAR_H, { 18, 18, 42, 255 });
-    DrawLine(0, (int)K_INFO_BAR_H, 720, (int)K_INFO_BAR_H, { 42, 42, 74, 255 });
+    DrawRectangle(0, 0, 720, (int)INFO_BAR_H, { 18, 18, 42, 255 });
+    DrawLine(0, (int)INFO_BAR_H, 720, (int)INFO_BAR_H, { 42, 42, 74, 255 });
 
     // Grid area background with border
     Rectangle grid_rect = GetGridRect();
@@ -20,16 +21,16 @@ void DrawBackground() {
     DrawRectangleLinesEx(grid_rect, 2, { 42, 58, 74, 255 });
 
     // Lane guides from inputs to grid
-    float grid_left_x = K_GRID_X - K_HEX_SIZE * K_SQRT3 / 2;
+    float grid_left_x = GRID_X - HEX_SIZE * SQRT3 / 2;
     for (int i = 0; i < 4; i++) {
         float y = GetInputNodeY(i);
         Color lane = ColorAlpha({ 0, 245, 212, 255 }, 0.20f);
-        DrawLineEx({ K_INPUT_PIN_X + 4, y }, { grid_left_x, y }, 2, lane);
+        DrawLineEx({ INPUT_PIN_X + 4, y }, { grid_left_x, y }, 2, lane);
         DrawCircleV({ grid_left_x - 2, y }, 2.5f, lane);
     }
 
     // Lane guides from grid to output
-    float grid_right_x = K_GRID_X + (K_GRID_COLS - 1) * K_SPACING_X + K_SPACING_X / 2 + K_HEX_SIZE * K_SQRT3 / 2;
+    float grid_right_x = GRID_X + (GRID_COLS - 1) * SPACING_X + SPACING_X / 2 + HEX_SIZE * SQRT3 / 2;
     for (int b = 0; b < 4; b++) {
         Vector2 pin = GetOutputNodeInputPin(b);
         Color lane = ColorAlpha({ 0, 245, 212, 255 }, 0.20f);
@@ -38,8 +39,8 @@ void DrawBackground() {
     }
 
     // Separators above and below palette
-    DrawLine(0, (int)K_PALETTE_Y - 2, 720, (int)K_PALETTE_Y - 2, { 42, 42, 74, 255 });
-    DrawLine(0, (int)K_PALETTE_Y + (int)K_PALETTE_H + 2, 720, (int)K_PALETTE_Y + (int)K_PALETTE_H + 2, { 42, 42, 74, 255 });
+    DrawLine(0, (int)PALETTE_Y - 2, 720, (int)PALETTE_Y - 2, { 42, 42, 74, 255 });
+    DrawLine(0, (int)PALETTE_Y + (int)PALETTE_H + 2, 720, (int)PALETTE_Y + (int)PALETTE_H + 2, { 42, 42, 74, 255 });
 }
 
 void DrawInfoBar(int target_hex, int current_hex, bool solved, float anim_time) {
@@ -91,19 +92,19 @@ static void DrawPin(Vector2 pos, bool active, bool is_hovered, bool is_connected
         fill = active ? Color{ 255, 96, 128, 255 } : Color{ 85, 119, 187, 255 };
     }
 
-    DrawCircleV(pos, K_PIN_RADIUS, fill);
-    DrawCircleV(pos, K_PIN_RADIUS, WHITE);
+    DrawCircleV(pos, PIN_RADIUS, fill);
+    DrawCircleV(pos, PIN_RADIUS, WHITE);
 
     if (is_hovered) {
         Color ring = show_delete ? Color{ 255, 0, 64, 255 } : SKYBLUE;
-        DrawCircleLines((int)pos.x, (int)pos.y, K_PIN_RADIUS + 3, ring);
+        DrawCircleLines((int)pos.x, (int)pos.y, PIN_RADIUS + 3, ring);
         if (show_delete) {
             DrawTextShadowed(GetFontDefault(), "X", (int)pos.x - 4, (int)pos.y - 5, 10, RED);
         }
     }
 }
 
-void DrawInputNodes(int input_bits[4], const Pin* hovered_pin) {
+void DrawInputNodes(int input_bits[4], const t_Pin* hovered_pin) {
     for (int i = 0; i < 4; i++) {
         float y = GetInputNodeY(i);
         bool active = input_bits[i] == 1;
@@ -111,12 +112,12 @@ void DrawInputNodes(int input_bits[4], const Pin* hovered_pin) {
                          && hovered_pin->source_id == i && !hovered_pin->is_input;
 
         // Node body
-        DrawNodeBody(K_INPUT_X, y, 16, active, false);
+        DrawNodeBody(INPUT_X, y, 16, active, false);
 
         // Label
         char label[8];
         snprintf(label, sizeof(label), "IN%d", i);
-        DrawTextShadowed(GetFontDefault(), label, (int)K_INPUT_X - 10, (int)y - 5, 9, WHITE);
+        DrawTextShadowed(GetFontDefault(), label, (int)INPUT_X - 10, (int)y - 5, 9, WHITE);
 
         // Output pin
         Vector2 pin_pos = GetInputNodeOutputPin(i);
@@ -124,9 +125,9 @@ void DrawInputNodes(int input_bits[4], const Pin* hovered_pin) {
     }
 }
 
-void DrawOutputNode(int output_bits[4], int target_hex, const Pin* hovered_pin, bool has_wire) {
-    float cx = K_OUTPUT_CENTER_X;
-    float cy = K_OUTPUT_CENTER_Y;
+void DrawOutputNode(int output_bits[4], int target_hex, const t_Pin* hovered_pin, bool has_wire) {
+    float cx = OUTPUT_CENTER_X;
+    float cy = OUTPUT_CENTER_Y;
     int val = output_bits[0] + output_bits[1] * 2 + output_bits[2] * 4 + output_bits[3] * 8;
     bool match = (val == target_hex);
 
@@ -177,14 +178,14 @@ void DrawOutputNode(int output_bits[4], int target_hex, const Pin* hovered_pin, 
 static Rectangle GetPaletteButtonRect(int index) {
     float btn_w = 68;
     float spacing = 4;
-    float total_gate = K_GATE_COUNT * btn_w + (K_GATE_COUNT - 1) * spacing;
+    float total_gate = GATE_COUNT * btn_w + (GATE_COUNT - 1) * spacing;
     float total = total_gate + spacing + 90;
     float start_x = (720 - total) / 2;
-    return { start_x + index * (btn_w + spacing), K_PALETTE_Y + 12, btn_w, 32 };
+    return { start_x + index * (btn_w + spacing), PALETTE_Y + 12, btn_w, 32 };
 }
 
 int PickPaletteGate(Vector2 mouse_pos) {
-    for (int i = 0; i < K_GATE_COUNT; i++) {
+    for (int i = 0; i < GATE_COUNT; i++) {
         Rectangle r = GetPaletteButtonRect(i);
         if (CheckCollisionPointRec(mouse_pos, r)) return i;
     }
@@ -194,14 +195,14 @@ int PickPaletteGate(Vector2 mouse_pos) {
 Rectangle GetClearButtonRect() {
     float btn_w = 68;
     float spacing = 4;
-    float total_gate = K_GATE_COUNT * btn_w + (K_GATE_COUNT - 1) * spacing;
+    float total_gate = GATE_COUNT * btn_w + (GATE_COUNT - 1) * spacing;
     float total = total_gate + spacing + 90;
     float start_x = (720 - total) / 2;
-    return { start_x + total_gate + spacing, K_PALETTE_Y + 12, 90, 32 };
+    return { start_x + total_gate + spacing, PALETTE_Y + 12, 90, 32 };
 }
 
 void DrawPalette(int selected_index) {
-    for (int i = 0; i < K_GATE_COUNT; i++) {
+    for (int i = 0; i < GATE_COUNT; i++) {
         GateType type = (GateType)i;
         Rectangle r = GetPaletteButtonRect(i);
         bool is_selected = (i == selected_index);

@@ -16,9 +16,9 @@ struct WireDragState {
     bool IsActive() const { return active; }
 };
 
-void DrawWire(const Wire& w, int signal_val, float anim_time);
-void DrawAllWires(const std::vector<Wire>& wires,
-                  const std::vector<Gate>& gates,
+void DrawWire(const t_Wire& w, int signal_val, float anim_time);
+void DrawAllWires(const std::vector<t_Wire>& wires,
+                  const std::vector<t_Gate>& gates,
                   const int input_bits[4],
                   const std::unordered_map<int, int>& gate_outputs,
                   float anim_time);
