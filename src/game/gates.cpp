@@ -110,8 +110,21 @@ void DrawGateShape
     float hw = w / 2;
     float hh = h / 2;
 
-    Color body = output_val ? GateColors::body_on : GateColors::body_off;
-    Color border = output_val ? GateColors::border_on : GateColors::border_off;
+    Color body = GateColors::body_off;
+    Color border = GateColors::border_off;
+    if (output_val)
+    {
+        switch (gate.type)
+        {
+            case GateType::AND:  border = {0, 255, 128, 255}; body = {0, 60, 30, 255}; break;
+            case GateType::OR:   border = {0, 200, 255, 255}; body = {0, 40, 60, 255}; break;
+            case GateType::NOT:  border = {255, 100, 100, 255}; body = {60, 20, 20, 255}; break;
+            case GateType::XOR:  border = {200, 100, 255, 255}; body = {50, 20, 60, 255}; break;
+            case GateType::NAND: border = {255, 255, 100, 255}; body = {60, 60, 20, 255}; break;
+            case GateType::NOR:  border = {255, 150, 50, 255};  body = {60, 40, 10, 255}; break;
+            case GateType::XNOR: border = {150, 255, 255, 255}; body = {30, 60, 60, 255}; break;
+        }
+    }
     if (alpha < 1.0f)
     {
         body.a = static_cast<unsigned char>(static_cast<float>(body.a) * alpha);
@@ -121,7 +134,7 @@ void DrawGateShape
     // Glow for active gates
     if (output_val)
     {
-        DrawGlow({cx, cy}, hw, GateColors::border_on);
+        DrawGlow({cx, cy}, hw, border);
     }
 
     switch (gate.type)

@@ -74,10 +74,10 @@ void DrawGrid
     float anim_time
 )
 {
-    Color fill_even = {21, 21, 48, 255};
-    Color fill_odd = {18, 18, 40, 255};
-    Color outline = {42, 58, 74, 255};
-    Color dot_color = {42, 58, 90, 255};
+    Color fill_even = {10, 14, 28, 255};
+    Color fill_odd = {8, 11, 22, 255};
+    Color outline = {30, 48, 80, 255};
+    Color dot_color = {40, 60, 100, 255};
 
     for (int row = 0; row < GRID_ROWS; row++)
     {
@@ -112,8 +112,9 @@ void DrawGrid
         }
         else if (!is_occupied)
         {
-            DrawHexOutline(c, HEX_SIZE - 1, 2.0f, ColorAlpha(RAYWHITE, 0.25f * pulse));
-            DrawCircleV(c, 2, ColorAlpha(RAYWHITE, 0.4f));
+            DrawFilledHexagon(c, HEX_SIZE - 2, ColorAlpha({0, 255, 255, 255}, 0.1f * pulse));
+            DrawHexOutline(c, HEX_SIZE - 1, 2.5f, ColorAlpha({0, 255, 255, 255}, 0.5f * pulse));
+            DrawCircleV(c, 2, ColorAlpha({0, 255, 255, 255}, 0.6f));
         }
         else
         {

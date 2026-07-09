@@ -166,7 +166,7 @@ void Game::HandleClick(Vector2 pos)
         if (Dist(pos, {INPUT_X, GetInputNodeY(i)}) <= 20)
         {
             input_bits[i] ^= 1;
-            SpawnParticles({INPUT_X, GetInputNodeY(i)}, input_bits[i] ? Color{255, 32, 64, 255} : Color{100, 100, 100, 255}, 10);
+            SpawnParticles({INPUT_X, GetInputNodeY(i)}, input_bits[i] ? Color{0, 255, 255, 255} : Color{50, 100, 150, 255}, 10);
             PlaySfx(SfxType::TOGGLE_INPUT);
             Evaluate();
             return;
@@ -495,10 +495,14 @@ void Game::Draw()
         float gh = HEX_SIZE * SQRT3 * 0.75f * scale;
         int out_val = gate_outputs.count(gate.id) ? gate_outputs.at(gate.id) : 0;
 
+        // Occupied cell base highlight
+        DrawFilledHexagon(c, HEX_SIZE - 1, ColorAlpha({0, 200, 255, 255}, 0.05f));
+        DrawHexOutline(c, HEX_SIZE - 1, 1.5f, ColorAlpha({0, 200, 255, 255}, 0.3f));
+
         if (hovered_cell.row == gate.row && hovered_cell.col == gate.col)
         {
-            DrawFilledHexagon(c, HEX_SIZE - 2, ColorAlpha(SKYBLUE, 0.1f));
-            DrawHexOutline(c, HEX_SIZE - 2, 2, SKYBLUE);
+            DrawFilledHexagon(c, HEX_SIZE - 2, ColorAlpha({0, 255, 255, 255}, 0.15f));
+            DrawHexOutline(c, HEX_SIZE - 2, 2.5f, {0, 255, 255, 255});
         }
 
         DrawGateShape(gate, c.x - gw / 2, c.y - gh / 2, gw, gh, out_val);
@@ -595,7 +599,7 @@ void Game::Draw()
         hover_pin_ptr = &stub_pin;
     }
 
-    DrawInputNodes(input_bits, hover_pin_ptr);
+    DrawInputNodes(input_bits, hover_pin_ptr, anim_time);
 
     bool has_out_wire =
         std::any_of
@@ -603,7 +607,7 @@ void Game::Draw()
             wires.begin(), wires.end(),
             [](const t_Wire& w) { return w.to_type == 1; }
         );
-    DrawOutputNode(output_bits, target_hex, hover_pin_ptr, has_out_wire);
+    DrawOutputNode(output_bits, target_hex, hover_pin_ptr, has_out_wire, anim_time);
 
     DrawPalette(selected_gate_index);
 

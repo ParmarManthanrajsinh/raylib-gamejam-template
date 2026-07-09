@@ -3,25 +3,25 @@
 
 constexpr int SCREEN_WIDTH = 720;
 constexpr int SCREEN_HEIGHT = 720;
-constexpr int GRID_COLS = 8;
+constexpr int GRID_COLS = 7;
 constexpr int GRID_ROWS = 8;
-constexpr float HEX_SIZE = 38.0f;
+constexpr float HEX_SIZE = 40.0f;
 constexpr float SQRT3 = 1.73205080757f;
 constexpr float SPACING_X = HEX_SIZE * SQRT3;
 constexpr float SPACING_Y = HEX_SIZE * 1.5f;
-constexpr float GRID_X = 100.0f;
-constexpr float GRID_Y = 106.0f;
+constexpr float GRID_X = 105.0f;
+constexpr float GRID_Y = 110.0f;
 constexpr float GRID_W = (GRID_COLS - 1) * SPACING_X + SPACING_X / 2 + HEX_SIZE * SQRT3;
 constexpr float GRID_H = (GRID_ROWS - 1) * SPACING_Y + HEX_SIZE * 2;
 
-constexpr float INFO_BAR_H = 48.0f;
-constexpr float PALETTE_H = 56.0f;
-constexpr float PALETTE_Y = GRID_Y + GRID_H - 10;
-constexpr float INPUT_X = 36.0f;
-constexpr float INPUT_PIN_X = 56.0f;
-constexpr float OUTPUT_CENTER_X = 676.0f;
+constexpr float INFO_BAR_H = 36.0f;
+constexpr float PALETTE_H = 48.0f;
+constexpr float PALETTE_Y = 660.0f;
+constexpr float INPUT_X = 32.0f;
+constexpr float INPUT_PIN_X = 52.0f;
+constexpr float OUTPUT_CENTER_X = 665.0f;
 constexpr float OUTPUT_CENTER_Y = GRID_Y + GRID_H / 2;
-constexpr float OUTPUT_PIN_X = 642.0f;
+constexpr float OUTPUT_PIN_X = 615.0f;
 constexpr float PIN_RADIUS = 7.0f;
 constexpr float PIN_HIT_RADIUS = 12.0f;
 

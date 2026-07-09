@@ -66,7 +66,7 @@ namespace
         return 0;
     }
 
-    void DrawOrthogonalWire
+    void DrawBezierWire
     (
         Vector2 p1,
         Vector2 p2,
@@ -80,70 +80,57 @@ namespace
     {
         float mid_x = p1.x + 20;
         float target_approach_x = p2.x - 16;
+        float route_x = target_approach_x > mid_x + 10 ? mid_x : fminf(mid_x, p1.x + fabsf(p2.x - p1.x) * 0.4f);
 
-        float route_x;
-        if (target_approach_x > mid_x + 10)
-        {
-            route_x = mid_x;
-        }
-        else
-        {
-            route_x = fminf(mid_x, p1.x + fabsf(p2.x - p1.x) * 0.4f);
-        }
-
-        // Glow layer for active signals
-        if (glow)
-        {
-            Color glow_color = color;
-            glow_color.a = static_cast<unsigned char>(100 * alpha);
-            DrawLineEx({p1.x, p1.y}, {route_x, p1.y}, line_width + 4, glow_color);
-            DrawLineEx({route_x, p1.y}, {route_x, p2.y}, line_width + 4, glow_color);
-            DrawLineEx({route_x, p2.y}, {p2.x, p2.y}, line_width + 4, glow_color);
-        }
+        Vector2 p1_end = {route_x, p1.y};
+        Vector2 p2_start = {route_x, p2.y};
 
         Color draw_color = color;
         draw_color.a = static_cast<unsigned char>(255 * alpha);
+        Color glow_color = color;
+        glow_color.a = static_cast<unsigned char>(100 * alpha);
 
-        DrawLineEx({p1.x, p1.y}, {route_x, p1.y}, line_width, draw_color);
-        DrawLineEx({route_x, p1.y}, {route_x, p2.y}, line_width, draw_color);
-        DrawLineEx({route_x, p2.y}, {p2.x, p2.y}, line_width, draw_color);
+        if (glow)
+        {
+            DrawLineEx(p1, p1_end, line_width + 6, glow_color);
+            DrawLineBezier(p1_end, p2_start, line_width + 6, glow_color);
+            DrawLineEx(p2_start, p2, line_width + 6, glow_color);
+        }
 
-        // Signal dots
+        DrawLineEx(p1, p1_end, line_width, draw_color);
+        DrawLineBezier(p1_end, p2_start, line_width, draw_color);
+        DrawLineEx(p2_start, p2, line_width, draw_color);
+
         if (has_signal)
         {
-            float seg1_len = fabsf(route_x - p1.x);
-            float seg2_len = fabsf(p2.y - p1.y);
-            float seg3_len = fabsf(p2.x - route_x);
-            float total_len = seg1_len + seg2_len + seg3_len;
-            int num_dots = static_cast<int>(total_len / 25);
-            if (num_dots < 1)
+            // Simplified dots along Bezier curve
+            float t_offset = fmodf(anim_time * 1.5f, 1.0f);
+            for (int i = 0; i < 4; i++)
             {
-                num_dots = 1;
-            }
-
-            for (int i = 0; i < num_dots; i++)
-            {
-                float t = fmodf(static_cast<float>(i) / num_dots + anim_time * 0.8f, 1.0f);
-                float dist = t * total_len;
-                Vector2 dot_pos{};
-
-                if (dist < seg1_len)
+                float t = fmodf(t_offset + static_cast<float>(i) * 0.25f, 1.0f);
+                Vector2 dot_pos;
+                // Approximate position based on t
+                if (t < 0.2f)
+                    dot_pos = {p1.x + (p1_end.x - p1.x) * (t / 0.2f), p1.y};
+                else if (t < 0.8f)
                 {
-                    float frac = dist / fmaxf(seg1_len, 0.001f);
-                    dot_pos = {p1.x + (route_x - p1.x) * frac, p1.y};
-                }
-                else if (dist < seg1_len + seg2_len)
-                {
-                    float frac = (dist - seg1_len) / fmaxf(seg2_len, 0.001f);
-                    dot_pos = {route_x, p1.y + (p2.y - p1.y) * frac};
+                    float ct = (t - 0.2f) / 0.6f; // bezier t
+                    float u = 1.0f - ct;
+                    float tt = ct * ct;
+                    float uu = u * u;
+                    float uuu = uu * u;
+                    float ttt = tt * ct;
+                    
+                    Vector2 cp1 = {p1_end.x, p1_end.y + (p2_start.y - p1_end.y) * 0.3f};
+                    Vector2 cp2 = {p2_start.x, p2_start.y - (p2_start.y - p1_end.y) * 0.3f};
+                    
+                    dot_pos.x = uuu * p1_end.x + 3 * uu * ct * cp1.x + 3 * u * tt * cp2.x + ttt * p2_start.x;
+                    dot_pos.y = uuu * p1_end.y + 3 * uu * ct * cp1.y + 3 * u * tt * cp2.y + ttt * p2_start.y;
                 }
                 else
-                {
-                    float frac = (dist - seg1_len - seg2_len) / fmaxf(seg3_len, 0.001f);
-                    dot_pos = {route_x + (p2.x - route_x) * frac, p2.y};
-                }
-
-                DrawCircleV(dot_pos, 3, WHITE);
+                    dot_pos = {p2_start.x + (p2.x - p2_start.x) * ((t - 0.8f) / 0.2f), p2_start.y};
+                
+                DrawCircleV(dot_pos, 4, WHITE);
             }
         }
     }
@@ -182,16 +169,12 @@ void DrawAllWires
         Color color = active ? Color{255, 0, 64, 255} : Color{102, 119, 153, 255};
         float line_width = active ? 3 + pulse * 2 : 2;
 
-        DrawOrthogonalWire(from, to, color, alpha, line_width, active, anim_time, active);
+        DrawBezierWire(from, to, color, alpha, line_width, active, anim_time, active);
     }
 }
 
 void DrawGhostWire(Vector2 from, Vector2 mouse_pos)
 {
-    Color ghost_color = {0, 245, 212, 153}; // rgba(0,245,212,0.6)
-    float mid_x = from.x + 20;
-
-    DrawLineEx({from.x, from.y}, {mid_x, from.y}, 2, ghost_color);
-    DrawLineEx({mid_x, from.y}, {mid_x, mouse_pos.y}, 2, ghost_color);
-    DrawLineEx({mid_x, mouse_pos.y}, {mouse_pos.x, mouse_pos.y}, 2, ghost_color);
+    Color ghost_color = {0, 245, 212, 200}; // rgba(0,245,212,0.8)
+    DrawBezierWire(from, mouse_pos, ghost_color, 1.0f, 3.0f, true, 0.0f, false);
 }
