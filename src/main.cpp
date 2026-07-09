@@ -26,15 +26,17 @@ int main()
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hex Merge");
     InitAudio();
     InitGameAssets();
-    Game game;
+    {
+        Game game;
 
 #if defined(PLATFORM_WEB)
-    emscripten_set_main_loop_arg(UpdateDrawFrameWeb, &game, 60, 1);
+        emscripten_set_main_loop_arg(UpdateDrawFrameWeb, &game, 60, 1);
 #else
-
-    SetTargetFPS(60);
-    while (!game.ShouldClose()) UpdateDrawFrame(&game);
+        SetTargetFPS(60);
+        while (!game.ShouldClose()) UpdateDrawFrame(&game);
 #endif
+    }
+
     UnloadGameAssets();
     ShutdownAudio();
     CloseWindow();
