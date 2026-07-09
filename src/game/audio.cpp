@@ -57,7 +57,7 @@ namespace
 
     Sound GenerateArpeggio()
     {
-        float notes[] = {400.0f, 600.0f, 900.0f};
+        float notes[3] = {400.0f, 600.0f, 900.0f};
         float note_dur = 0.08f;
         float gap = 0.02f;
         int note_samples = static_cast<int>((SAMPLE_RATE * note_dur));
