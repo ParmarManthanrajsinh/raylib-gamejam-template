@@ -1,7 +1,10 @@
 #include "assets.h"
 
-static Font game_font;
-static Shader bloom_shader;
+namespace
+{
+    Font game_font;
+    Shader bloom_shader;
+}
 
 void InitGameAssets()
 {

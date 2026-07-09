@@ -8,7 +8,6 @@
 #include "gates.h"
 #include "hex_grid.h"
 #include "wires.h"
-#include "assets.h"
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>

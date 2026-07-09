@@ -1,9 +1,10 @@
 #include "game.h"
+#include "assets.h"
 #include "audio.h"
 #include "circuit.h"
 #include "gates.h"
 #include "hex_grid.h"
-#include "text_util.h"
+#include "text_util.h" // IWYU pragma: keep
 #include "ui.h"
 #include "wires.h"
 #include <algorithm>

@@ -22,5 +22,8 @@
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x86" ]
     }
+  ],
+  "python.linting.pylintArgs": [
+    "--ignore=CMakeLists.txt,*.cmake"
   ]
 }
