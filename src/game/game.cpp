@@ -53,8 +53,6 @@ void Game::Reset()
     hovered_pin = {};
     solved = false;
     solved_pulse = 0;
-    particles.clear();
-    screen_shake_time = 0;
     target_hex = GetRandomValue(1, 15);
     if (target_hex == 0) target_hex = 10;
     Evaluate();
@@ -308,8 +306,13 @@ void Game::HandleClick(Vector2 pos)
     // Clear button
     if (CheckCollisionPointRec(pos, GetClearButtonRect()))
     {
+        for (const auto& g : gates)
+        {
+            Vector2 c = GetHexCenter(g.row, g.col);
+            SpawnParticles(c, {255, 80, 80, 255}, 20);
+        }
         PlaySfx(SfxType::REMOVE_GATE);
-        screen_shake_time = 0.2f;
+        screen_shake_time = 0.3f;
         Reset();
         return;
     }
