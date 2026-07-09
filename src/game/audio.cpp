@@ -116,6 +116,8 @@ void InitAudio()
 
 void PlaySfx(SfxType type)
 {
+    float pitch = 0.9f + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.2f;
+    SetSoundPitch(sounds[static_cast<int>(type)], pitch);
     PlaySound(sounds[static_cast<int>(type)]);
 }
 

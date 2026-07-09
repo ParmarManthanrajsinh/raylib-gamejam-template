@@ -27,7 +27,9 @@ Game::Game()
   anim_time(0),
   solved_pulse(0),
   selected_gate_index(-1),
-  mouse_pos{-100, -100}
+  mouse_pos{-100, -100},
+  ghost_pos{-100, -100},
+  screen_shake_time(0)
 {
     for (int i = 0; i < 4; i++) input_bits[i] = 0;
     for (int i = 0; i < 4; i++) output_bits[i] = 0;
@@ -51,6 +53,8 @@ void Game::Reset()
     hovered_pin = {};
     solved = false;
     solved_pulse = 0;
+    particles.clear();
+    screen_shake_time = 0;
     target_hex = GetRandomValue(1, 15);
     if (target_hex == 0) target_hex = 10;
     Evaluate();
@@ -64,7 +68,25 @@ void Game::Evaluate()
     if (solved && !was_solved)
     {
         solved_pulse = 1.0f;
+        screen_shake_time = 0.4f;
+        SpawnParticles({OUTPUT_CENTER_X, OUTPUT_CENTER_Y}, {0, 255, 136, 255}, 50);
         PlaySfx(SfxType::SOLVED);
+    }
+}
+
+void Game::SpawnParticles(Vector2 pos, Color color, int count)
+{
+    for (int i = 0; i < count; i++)
+    {
+        Particle p;
+        p.pos = pos;
+        float angle = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2.0f * PI;
+        float speed = 20.0f + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 100.0f;
+        p.vel = {cosf(angle) * speed, sinf(angle) * speed};
+        p.max_life = 0.3f + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 0.4f;
+        p.life = p.max_life;
+        p.color = color;
+        particles.push_back(p);
     }
 }
 
@@ -146,6 +168,7 @@ void Game::HandleClick(Vector2 pos)
         if (Dist(pos, {INPUT_X, GetInputNodeY(i)}) <= 20)
         {
             input_bits[i] ^= 1;
+            SpawnParticles({INPUT_X, GetInputNodeY(i)}, input_bits[i] ? Color{255, 32, 64, 255} : Color{100, 100, 100, 255}, 10);
             PlaySfx(SfxType::TOGGLE_INPUT);
             Evaluate();
             return;
@@ -183,6 +206,7 @@ void Game::HandleClick(Vector2 pos)
                     wires.end()
                 );
                 wires.emplace_back(w);
+                SpawnParticles(pos, {255, 255, 0, 255}, 15);
                 PlaySfx(SfxType::CONNECT_WIRE);
             }
             wire_drag_state = {};
@@ -262,7 +286,12 @@ void Game::HandleClick(Vector2 pos)
             ),
             wires.end()
         );
-        if (static_cast<int>(wires.size()) < old_count) PlaySfx(SfxType::DISCONNECT_WIRE);
+        if (static_cast<int>(wires.size()) < old_count)
+        {
+            SpawnParticles(pos, {255, 100, 100, 255}, 15);
+            screen_shake_time = 0.15f;
+            PlaySfx(SfxType::DISCONNECT_WIRE);
+        }
         Evaluate();
         return;
     }
@@ -280,6 +309,7 @@ void Game::HandleClick(Vector2 pos)
     if (CheckCollisionPointRec(pos, GetClearButtonRect()))
     {
         PlaySfx(SfxType::REMOVE_GATE);
+        screen_shake_time = 0.2f;
         Reset();
         return;
     }
@@ -293,8 +323,11 @@ void Game::HandleClick(Vector2 pos)
         ng.type = static_cast<GateType>(selected_gate_index);
         ng.row = cell.row;
         ng.col = cell.col;
+        ng.spawn_time = anim_time;
         gates.emplace_back(ng);
         gate_outputs[ng.id] = 0;
+        SpawnParticles(GetHexCenter(cell.row, cell.col), {0, 255, 255, 255}, 20);
+        screen_shake_time = 0.1f;
         PlaySfx(SfxType::PLACE_GATE);
         Evaluate();
         return;
@@ -314,6 +347,7 @@ void Game::HandleRightClick(Vector2 pos)
         t_Gate* gate = FindGateAt(cell.row, cell.col);
         if (gate)
         {
+            Vector2 c = GetHexCenter(gate->row, gate->col);
             RemoveWiresForGate(gate->id);
             gate_outputs.erase(gate->id);
             gates.erase
@@ -325,6 +359,8 @@ void Game::HandleRightClick(Vector2 pos)
                 ),
                 gates.end()
             );
+            SpawnParticles(c, {255, 80, 80, 255}, 30);
+            screen_shake_time = 0.2f;
             PlaySfx(SfxType::REMOVE_GATE);
             Evaluate();
             return;
@@ -345,10 +381,31 @@ void Game::Update()
     if (IsMouseButtonPressed(MOUSE_RIGHT_BUTTON))
         HandleRightClick(mouse_pos);
 
+    if (wire_drag_state.IsActive())
+    {
+        if (GetRandomValue(0, 2) == 0) SpawnParticles(mouse_pos, {0, 245, 212, 200}, 1);
+    }
+
     float dt = GetFrameTime();
     anim_time += dt;
     if (solved && solved_pulse > 0)
         solved_pulse = fmaxf(0, solved_pulse - dt * 0.8f);
+
+    if (screen_shake_time > 0) screen_shake_time -= dt;
+
+    for (auto& p : particles)
+    {
+        p.pos.x += p.vel.x * dt;
+        p.pos.y += p.vel.y * dt;
+        p.life -= dt;
+    }
+    particles.erase(
+        std::remove_if(particles.begin(), particles.end(), [](const Particle& p) { return p.life <= 0; }),
+        particles.end()
+    );
+
+    ghost_pos.x += (mouse_pos.x - ghost_pos.x) * dt * 15.0f;
+    ghost_pos.y += (mouse_pos.y - ghost_pos.y) * dt * 15.0f;
 
     if (IsKeyPressed(KEY_ONE))
     {
@@ -392,6 +449,16 @@ void Game::Draw()
     BeginDrawing();
     ClearBackground({13, 13, 26, 255});
 
+    Camera2D camera = { 0 };
+    camera.zoom = 1.0f;
+    if (screen_shake_time > 0)
+    {
+        float shake_mag = screen_shake_time * 15.0f;
+        camera.offset.x = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2 - 1) * shake_mag;
+        camera.offset.y = (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2 - 1) * shake_mag;
+    }
+    BeginMode2D(camera);
+
     DrawBackground();
 
     bool has_selection = selected_gate_index >= 0;
@@ -415,8 +482,14 @@ void Game::Draw()
     for (const auto& gate : gates)
     {
         Vector2 c = GetHexCenter(gate.row, gate.col);
-        float gw = HEX_SIZE * 1.3f;
-        float gh = HEX_SIZE * SQRT3 * 0.75f;
+        float scale = 1.0f;
+        float age = anim_time - gate.spawn_time;
+        if (age < 0.2f)
+        {
+            scale = 1.0f + 0.5f * (1.0f - age / 0.2f);
+        }
+        float gw = HEX_SIZE * 1.3f * scale;
+        float gh = HEX_SIZE * SQRT3 * 0.75f * scale;
         int out_val = gate_outputs.count(gate.id) ? gate_outputs.at(gate.id) : 0;
 
         if (hovered_cell.row == gate.row && hovered_cell.col == gate.col)
@@ -491,7 +564,7 @@ void Game::Draw()
         {
             float s = 0.55f;
             float bob = sinf(anim_time * 3) * 2;
-            Vector2 gp = {mouse_pos.x, mouse_pos.y + bob};
+            Vector2 gp = {ghost_pos.x, ghost_pos.y + bob};
 
             DrawCircleV(gp, 14, ColorAlpha(SKYBLUE, 0.08f));
             DrawGateShape(fg, gp.x - gw * s / 2, gp.y - gh * s / 2, gw * s, gh * s, 0, 0.45f);
@@ -540,6 +613,14 @@ void Game::Draw()
         DrawCircleV(mouse_pos, 5, ColorAlpha(SKYBLUE, 0.7f));
     }
 
+    for (const auto& p : particles)
+    {
+        Color c = p.color;
+        c.a = static_cast<unsigned char>(255 * (p.life / p.max_life));
+        DrawCircleV(p.pos, 3.0f * (p.life / p.max_life), c);
+    }
+
+    EndMode2D();
     EndDrawing();
 }
 

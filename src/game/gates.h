@@ -43,6 +43,7 @@ struct t_Gate
     GateType type = GateType::AND;
     int row = 0;
     int col = 0;
+    float spawn_time = 0;
 };
 
 struct t_Pin

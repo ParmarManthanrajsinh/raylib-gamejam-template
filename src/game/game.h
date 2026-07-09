@@ -27,6 +27,15 @@ struct t_PinHit
     }
 };
 
+struct Particle
+{
+    Vector2 pos;
+    Vector2 vel;
+    float life;
+    float max_life;
+    Color color;
+};
+
 class Game
 {
   public:
@@ -56,6 +65,11 @@ class Game
     t_HexCell hovered_cell;
     t_PinHit hovered_pin;
     Vector2 mouse_pos;
+    Vector2 ghost_pos;
+
+    // Juice
+    std::vector<Particle> particles;
+    float screen_shake_time;
 
     // Helpers
     void Reset();
@@ -64,6 +78,7 @@ class Game
     t_Gate* FindGateById(int id);
     t_PinHit FindPinAt(Vector2 pos);
     void RemoveWiresForGate(int gate_id);
+    void SpawnParticles(Vector2 pos, Color color, int count);
 
     // Event handlers
     void HandleClick(Vector2 pos);
