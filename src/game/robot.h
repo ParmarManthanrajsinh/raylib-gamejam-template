@@ -2,7 +2,6 @@
 #include <raylib.h>
 #include <string>
 #include <vector>
-// #include "game.h"
 #include "gates.h" // For GateType
 #include "hex_grid.h" // IWYU pragma: keep
 
