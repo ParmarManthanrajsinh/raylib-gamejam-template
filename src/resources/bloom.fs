@@ -21,7 +21,7 @@ void main()
         {
             vec4 c = texture2D(texture0, fragTexCoord + vec2(float(x) * dx, float(y) * dy));
             float brightness = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
-            if(brightness > 0.75) 
+            if(brightness > 1.75) 
             {
                 bloom += c * 0.004;
             }

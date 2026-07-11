@@ -29,6 +29,7 @@ Game::Game()
   solved(false),
   anim_time(0),
   solved_pulse(0),
+  transition_time(0),
   selected_gate_index(-1),
   mouse_pos{-100, -100},
   ghost_pos{-100, -100},
@@ -61,6 +62,7 @@ void Game::Reset()
     hovered_pin = {};
     solved = false;
     solved_pulse = 0;
+    transition_time = 0;
     anim_time = 0;
     screen_shake_time = 0;
     target_hex = GetRandomValue(1, 15);
@@ -399,14 +401,61 @@ void Game::Update()
         if (game_state == GameState::TITLE_SCREEN)
         {
             GameState next = UpdateTitleScreen(anim_time);
-            if (next == GameState::PLAYING) game_state = GameState::PLAYING;
-            else if (next == GameState::HOW_TO_PLAY) game_state = GameState::HOW_TO_PLAY;
+            if (next == GameState::TITLE_TO_PLAY_TRANSITION) 
+            {
+                game_state = GameState::TITLE_TO_PLAY_TRANSITION;
+                PlaySfx(SfxType::SOLVED); // Juice for starting
+            }
+            else if (next == GameState::TITLE_TO_HOW_TO_PLAY_TRANSITION)
+            {
+                game_state = GameState::TITLE_TO_HOW_TO_PLAY_TRANSITION;
+                PlaySfx(SfxType::SOLVED);
+            }
+        }
+        else if (game_state == GameState::TITLE_TO_PLAY_TRANSITION || game_state == GameState::HOW_TO_PLAY_TO_PLAY_TRANSITION)
+        {
+            float dt = GetFrameTime();
+            transition_time += dt;
+            if (transition_time >= 0.8f)
+            {
+                game_state = GameState::PLAYING;
+                transition_time = 0;
+                Reset(); // Initialize fresh board
+            }
+        }
+        else if (game_state == GameState::TITLE_TO_HOW_TO_PLAY_TRANSITION)
+        {
+            float dt = GetFrameTime();
+            transition_time += dt;
+            if (transition_time >= 0.8f)
+            {
+                game_state = GameState::HOW_TO_PLAY;
+                transition_time = 0;
+            }
+        }
+        else if (game_state == GameState::HOW_TO_PLAY_TO_TITLE_TRANSITION)
+        {
+            float dt = GetFrameTime();
+            transition_time += dt;
+            if (transition_time >= 0.8f)
+            {
+                game_state = GameState::TITLE_SCREEN;
+                transition_time = 0;
+            }
         }
         else if (game_state == GameState::HOW_TO_PLAY)
         {
             GameState next = UpdateHowToPlay(anim_time);
-            if (next == GameState::TITLE_SCREEN) game_state = GameState::TITLE_SCREEN;
-            else if (next == GameState::PLAYING) game_state = GameState::PLAYING;
+            if (next == GameState::HOW_TO_PLAY_TO_TITLE_TRANSITION)
+            {
+                game_state = GameState::HOW_TO_PLAY_TO_TITLE_TRANSITION;
+                PlaySfx(SfxType::SOLVED);
+            }
+            else if (next == GameState::HOW_TO_PLAY_TO_PLAY_TRANSITION)
+            {
+                game_state = GameState::HOW_TO_PLAY_TO_PLAY_TRANSITION;
+                PlaySfx(SfxType::SOLVED); // Juice for starting
+            }
         }
 
         float dt = GetFrameTime();
@@ -516,13 +565,13 @@ void Game::Draw()
     if (game_state != GameState::PLAYING)
     {
         BeginDrawing();
-        if (game_state == GameState::TITLE_SCREEN)
+        if (game_state == GameState::TITLE_SCREEN || game_state == GameState::TITLE_TO_PLAY_TRANSITION || game_state == GameState::TITLE_TO_HOW_TO_PLAY_TRANSITION)
         {
-            DrawTitleScreen(anim_time);
+            DrawTitleScreen(anim_time, transition_time);
         }
-        else if (game_state == GameState::HOW_TO_PLAY)
+        else if (game_state == GameState::HOW_TO_PLAY || game_state == GameState::HOW_TO_PLAY_TO_PLAY_TRANSITION || game_state == GameState::HOW_TO_PLAY_TO_TITLE_TRANSITION)
         {
-            DrawHowToPlay(anim_time);
+            DrawHowToPlay(anim_time, transition_time);
         }
         EndDrawing();
         return;

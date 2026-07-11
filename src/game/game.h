@@ -61,6 +61,7 @@ class Game
     bool solved;
     float anim_time;
     float solved_pulse;
+    float transition_time;
 
     // UI state
     int selected_gate_index; // -1 = none
