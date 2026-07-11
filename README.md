@@ -1,6 +1,6 @@
-## Hex Merge — Logic Gate Puzzle
+## Hex Gate — Logic Gate Puzzle
 
-![Hex Merge](screenshots/screenshot000.png "Hex Merge")
+![Hex Gate](screenshots/screenshot000.png "Hex Gate")
 
 ### Description
 
@@ -10,26 +10,27 @@ Build digital logic circuits on a hex grid to match target hex values. Connect i
 
 - Hex-based grid for gate placement and wiring
 - 7 logic gate types with distinct visual shapes
-- Drag-to-wire connection system between gates
+- Drag-to-wire connection system between gates (Max 2 wires per output pin)
 - Real-time circuit evaluation with animated signal propagation
 - 4-bit input/output with hex value display
-- Randomized target values for replayability
+- Randomized fixed target values and input bits
+- Minimum 3 gates required to solve puzzles
+- Blocked middle node to increase routing difficulty
+- Funny penalty ("Lazy Developer") for trying to direct wire input to output
 - Retro pixel-art aesthetic with glow effects
 
-### Controls (not finalized)
+### Controls
 
 Keyboard: 
-- `1`–`4` — Toggle input bits
-- `R` — Randomize target hex value
-- `T` — Cycle target hex value
-- `Esc` — Cancel selection
+- `R` — Randomize target hex value and inputs
+- `Esc` — Cancel selection / Back to Title
 
 Mouse:
 - Click a gate in the palette → click a hex cell to place it
 - Click an output pin → click an input pin to create a wire
 - Click an input pin that already has a wire → remove that wire
 - Right-click a placed gate → delete it and its wires
-- Click an input node (left side) → toggle its bit
+- Click Clear button to wipe the board
 
 ### Play
 
@@ -55,4 +56,4 @@ _TODO: Add gameplay screenshots or animated GIFs._
 
 This project sources are licensed under an unmodified zlib/libpng license, which is an OSI-certified, BSD-like license that allows static linking with closed source software. Check [LICENSE](LICENSE) for further details.
 
-*Copyright (c) 2025 Hex Merge Team*
+*Copyright (c) 2025 Hex Gate Team*

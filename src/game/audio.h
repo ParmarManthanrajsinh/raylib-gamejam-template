@@ -9,6 +9,8 @@ enum class SfxType
     TOGGLE_INPUT,
     SOLVED,
     ERROR,
+    ROBOT_TALK,
+    ROBOT_BOOP,
     COUNT
 };
 

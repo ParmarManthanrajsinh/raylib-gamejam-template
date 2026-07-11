@@ -9,6 +9,7 @@
 #include "hex_grid.h"
 #include "menu.h"
 #include "wires.h"
+#include "robot.h"
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
@@ -82,13 +83,26 @@ class Game
         RenderTexture2D render_target;
 
         // Helpers
-        void Reset();
+        void Reset(bool is_clear = false);
         void Evaluate();
         t_Gate* FindGateAt(int row, int col);
         t_Gate* FindGateById(int id);
         t_PinHit FindPinAt(Vector2 pos);
         void RemoveWiresForGate(int gate_id);
         void SpawnParticles(Vector2 pos, Color color, int count);
+
+        // Robot tracking state
+        Robot robot;
+        float robot_idle_timer = 0;
+        int robot_gate_type_counts[7] = {};
+        int robot_delete_count = 0;
+        float robot_last_action_time = 0;
+        Vector2 robot_last_mouse_pos = {-100, -100};
+        float robot_mouse_still_time = 0;
+        bool robot_first_gate_placed = false;
+        bool robot_first_wire_connected = false;
+        int robot_obstacle_attempts = 0;
+        int robot_matching_bits_prev = 0;
 
         // Event handlers
         void HandleClick(Vector2 pos);

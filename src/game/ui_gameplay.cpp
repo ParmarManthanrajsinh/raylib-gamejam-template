@@ -11,10 +11,10 @@ static Rectangle GetPaletteButtonRect(int index)
 {
     float btn_w = 68;
     float spacing = 4;
-    float total_gate = 5 * btn_w + (5 - 1) * spacing; // GATE_COUNT is 5
+    float total_gate = GATE_COUNT * btn_w + (GATE_COUNT - 1) * spacing;
     float total = total_gate + spacing + 90;
     float start_x = (720 - total) / 2;
-    return {start_x + index * (btn_w + spacing), 650.0f + 12.0f, btn_w, 32}; // PALETTE_Y is 650
+    return {start_x + index * (btn_w + spacing), 650.0f + 12.0f, btn_w, 32};
 }
 
 static void DrawPin(Vector2 pos, bool active, bool is_hovered, bool is_connected, bool show_delete)

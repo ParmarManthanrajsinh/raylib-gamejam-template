@@ -53,9 +53,9 @@ Rectangle GetClearButtonRect()
 {
     float btn_w = 68;
     float spacing = 4;
-    float total_gate = 5 * btn_w + (5 - 1) * spacing; // GATE_COUNT is 5
+    float total_gate = 7 * btn_w + (7 - 1) * spacing; // GATE_COUNT is 7
     float total = total_gate + spacing + 90;
     float start_x = (720 - total) / 2;
-    return {start_x + total_gate + spacing, 650.0f + 12.0f, 90, 32}; // PALETTE_Y is 650
+    return {start_x + total_gate + spacing, 650.0f + 12.0f, 90, 32};
 }
 

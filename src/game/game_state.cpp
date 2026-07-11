@@ -160,6 +160,24 @@ void Game::Update()
     mouse_pos = GetMousePosition();
     hovered_pin = FindPinAt(mouse_pos);
     hovered_cell = GetGridCell(mouse_pos);
+    
+    if (hovered_pin.IsValid()) {
+        robot.SetHoveredPin(&hovered_pin);
+    } else {
+        robot.SetHoveredPin(nullptr);
+    }
+    
+    int hovered_palette = PickPaletteGate(mouse_pos);
+    if (hovered_palette >= 0) {
+        robot.OnPaletteHover(static_cast<GateType>(hovered_palette));
+    }
+    
+    float mouse_dx = mouse_pos.x - robot_last_mouse_pos.x;
+    float mouse_dy = mouse_pos.y - robot_last_mouse_pos.y;
+    float mouse_speed = sqrtf(mouse_dx*mouse_dx + mouse_dy*mouse_dy) / GetFrameTime();
+    robot_last_mouse_pos = mouse_pos;
+    if (mouse_speed < 5.0f) robot_mouse_still_time += GetFrameTime();
+    else robot_mouse_still_time = 0;
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         HandleClick(mouse_pos);
@@ -202,6 +220,7 @@ void Game::Update()
 
     float dt = GetFrameTime();
     anim_time += dt;
+    robot_idle_timer += dt;
     if (solved && solved_pulse > 0)
         solved_pulse = fmaxf(0, solved_pulse - dt * 0.8f);
 
@@ -233,20 +252,39 @@ void Game::Update()
     if (IsKeyPressed(KEY_R))
     {
         target_hex = GetRandomValue(1, 15);
+        robot.OnCheatDetected("reroll");
         Evaluate();
     }
     if (IsKeyPressed(KEY_T))
     {
         target_hex = (target_hex + 1) % 16;
+        robot.OnCheatDetected("increment");
         Evaluate();
     }
     if (IsKeyPressed(KEY_ESCAPE))
     {
         selected_gate_index = -1;
         wire_drag_state = {};
+        robot.OnSessionEnd(gates.size(), wires.size());
         game_state = GameState::PLAYING_TO_TITLE_TRANSITION;
         transition_time = 0;
         PlaySfx(SfxType::SOLVED);
+    }
+    
+    robot.Update(anim_time, mouse_pos, level_timer, 
+                 output_bits, target_hex, solved,
+                 robot_mouse_still_time, robot_last_action_time,
+                 robot_idle_timer, robot_gate_type_counts,
+                 robot_delete_count, wires.size(),
+                 robot_obstacle_attempts, robot_matching_bits_prev);
+                 
+    // Phase 3.4 Mood Particles
+    if (GetRandomValue(0, 100) < 5) {
+        RobotMood mood = robot.GetMood();
+        Vector2 p = robot.GetPos();
+        if (mood == RobotMood::HAPPY || mood == RobotMood::EXCITED) SpawnParticles({p.x, p.y - 40}, {255, 220, 50, 255}, 1);
+        else if (mood == RobotMood::ANGRY) SpawnParticles({p.x, p.y - 20}, {255, 50, 50, 255}, 1);
+        else if (mood == RobotMood::SURPRISED) SpawnParticles({p.x, p.y - 50}, {100, 200, 255, 255}, 1);
     }
 }
 

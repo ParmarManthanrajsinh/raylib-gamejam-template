@@ -14,6 +14,8 @@
 
 void Game::HandleClick(Vector2 pos)
 {
+    robot_last_action_time = anim_time;
+    robot_idle_timer = 0;
     // Input node toggles removed - inputs are now locked for difficulty.
 
     t_PinHit clicked_pin = FindPinAt(pos);
@@ -45,9 +47,30 @@ void Game::HandleClick(Vector2 pos)
                     }),
                     wires.end()
                 );
-                wires.emplace_back(w);
-                SpawnParticles(pos, {255, 255, 0, 255}, 15);
-                PlaySfx(SfxType::CONNECT_WIRE);
+                
+                int from_count = 0;
+                for (const auto& ex : wires) {
+                    if (ex.from_type == w.from_type && ex.from_id == w.from_id && ex.from_pin == w.from_pin) {
+                        from_count++;
+                    }
+                }
+
+                if (from_count < 2)
+                {
+                    wires.emplace_back(w);
+                    robot.OnWireConnected(wires.size(), gates.size());
+                    if (!robot_first_wire_connected) {
+                        robot_first_wire_connected = true;
+                        robot.OnFirstWireConnected();
+                    }
+                    SpawnParticles(pos, {255, 255, 0, 255}, 15);
+                    PlaySfx(SfxType::CONNECT_WIRE);
+                }
+                else
+                {
+                    SpawnParticles(pos, {255, 100, 100, 255}, 15);
+                    PlaySfx(SfxType::DISCONNECT_WIRE);
+                }
             }
             wire_drag_state = {};
             Evaluate();
@@ -80,6 +103,7 @@ void Game::HandleClick(Vector2 pos)
             };
             return;
         }
+        robot.OnWireDragCancelled();
         wire_drag_state = {};
     }
 
@@ -128,6 +152,7 @@ void Game::HandleClick(Vector2 pos)
         );
         if (static_cast<int>(wires.size()) < old_count)
         {
+            robot.OnWireDeleted();
             SpawnParticles(pos, {255, 100, 100, 255}, 15);
             screen_shake_time = 0.15f;
             PlaySfx(SfxType::DISCONNECT_WIRE);
@@ -141,6 +166,7 @@ void Game::HandleClick(Vector2 pos)
     if (pal_idx >= 0)
     {
         selected_gate_index = (selected_gate_index == pal_idx) ? -1 : pal_idx;
+        if (wire_drag_state.IsActive()) robot.OnWireDragCancelled();
         wire_drag_state = {};
         return;
     }
@@ -162,9 +188,10 @@ void Game::HandleClick(Vector2 pos)
             Vector2 c = GetHexCenter(g.row, g.col);
             SpawnParticles(c, {255, 80, 80, 255}, 20);
         }
+        robot.OnClearPressed();
         PlaySfx(SfxType::REMOVE_GATE);
         screen_shake_time = 0.3f;
-        Reset();
+        Reset(true);
         return;
     }
 
@@ -172,7 +199,14 @@ void Game::HandleClick(Vector2 pos)
     t_HexCell cell = GetGridCell(pos);
     bool is_obstacle = false;
     for (const auto& o : obstacles) {
-        if (o.row == cell.row && o.col == cell.col) { is_obstacle = true; break; }
+        if (o.row == cell.row && o.col == cell.col) { 
+            is_obstacle = true; 
+            if (selected_gate_index >= 0) {
+                robot.OnObstacleAttempt(); 
+                robot_obstacle_attempts++;
+            }
+            break; 
+        }
     }
 
     if (cell.IsValid() && selected_gate_index >= 0 && !FindGateAt(cell.row, cell.col) && !is_obstacle)
@@ -184,6 +218,14 @@ void Game::HandleClick(Vector2 pos)
         ng.col = cell.col;
         ng.spawn_time = anim_time;
         gates.emplace_back(ng);
+        
+        robot.OnGatePlaced(ng.type, gates.size());
+        robot_gate_type_counts[static_cast<int>(ng.type)]++;
+        if (!robot_first_gate_placed) {
+            robot_first_gate_placed = true;
+            robot.OnFirstGatePlaced(ng.type);
+        }
+        
         gate_outputs[ng.id] = 0;
         SpawnParticles(GetHexCenter(cell.row, cell.col), {0, 255, 255, 255}, 20);
         screen_shake_time = 0.1f;
@@ -203,12 +245,15 @@ void Game::HandleClick(Vector2 pos)
                 PlaySfx(SfxType::DISCONNECT_WIRE); // subtle click sound
             }
         }
+        if (wire_drag_state.IsActive()) robot.OnWireDragCancelled();
         wire_drag_state = {};
     }
 }
 
 void Game::HandleRightClick(Vector2 pos)
 {
+    robot_last_action_time = anim_time;
+    robot_idle_timer = 0;
     t_HexCell cell = GetGridCell(pos);
     if (cell.IsValid())
     {
@@ -230,6 +275,8 @@ void Game::HandleRightClick(Vector2 pos)
                 ),
                 gates.end()
             );
+            robot.OnGateDeleted(gate->type, gates.size());
+            robot_delete_count++;
             SpawnParticles(c, {255, 80, 80, 255}, 30);
             screen_shake_time = 0.2f;
             PlaySfx(SfxType::REMOVE_GATE);
@@ -238,6 +285,7 @@ void Game::HandleRightClick(Vector2 pos)
         }
     }
     selected_gate_index = -1;
+    if (wire_drag_state.IsActive()) robot.OnWireDragCancelled();
     wire_drag_state = {};
 }
 

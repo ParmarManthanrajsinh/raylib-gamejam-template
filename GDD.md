@@ -1,10 +1,10 @@
-# Game Design Document: Hex Merge
+# Game Design Document: Hex Gate
 
 ## 1. Overview
 
 | Field | Value |
 |---|---|
-| **Title** | Hex Merge |
+| **Title** | Hex Gate |
 | **Genre** | Puzzle / Logic Simulator |
 | **Platform** | Web (WASM), Windows, Linux, macOS |
 | **Resolution** | 720×720 pixels (jam requirement) |
@@ -42,8 +42,15 @@
 ### 3.3 Wiring
 - Click output pin → click input pin to connect
 - Right-click to delete wire
-- Wire colors match signal state (red=1, blue=0)
+- Wire colors match signal state (cyan=1, dark blue=0)
 - Auto-routing with orthogonal bends
+- Maximum fan-out limit of 2 wires per output pin
+
+### 3.4 Constraints & Difficulty
+- Minimum 3 gates required for a valid non-lazy solution
+- Blocked middle node adds spatial constraint
+- Fixed randomized input bits (player cannot toggle)
+- Direct wiring input to output earns "Lazy Developer" rank
 
 ### 3.4 Evaluation
 - Topological sort of gates each frame
@@ -70,12 +77,12 @@ Title Screen → Level Select → Puzzle Gameplay → Score Screen → Level Sel
 - Sandbox entry
 
 ### 4.3 Puzzle Gameplay
-- Left panel: input toggles (click to flip 0/1)
-- Center: grid area for gate placement
+- Left panel: input node (fixed bits)
+- Center: grid area for gate placement with center obstacle
 - Right: live output hex + target hex display
 - Bottom: gate palette
 - "Clear" button to reset grid
-- Win when output == target
+- Win when output == target with enough gates
 
 ### 4.4 Score Screen
 - Star rating (1-3): gates used vs par
@@ -96,9 +103,7 @@ Title Screen → Level Select → Puzzle Gameplay → Score Screen → Level Sel
 | Drag gate | Click + drag | Long press + drag |
 | Create wire | Click output pin → click input pin | Tap output → tap input |
 | Delete | Right-click gate/wire | Double-tap gate/wire |
-| Toggle input | Click input node | Tap input node |
-| Clear all | Ctrl+C / button | Button |
-| Undo | Ctrl+Z | Button |
+| Clear all | Clear button | Button |
 
 ## 6. Visual Style
 
@@ -140,7 +145,7 @@ Title Screen → Level Select → Puzzle Gameplay → Score Screen → Level Sel
 
 ## 10. Scoring & Rating Fit
 
-| Category | How Hex Merge Scores |
+| Category | How Hex Gate Scores |
 |---|---|
 | **Theme** | 5/5 — hex and merge are the entire game |
 | **Fun** | Satisfying puzzle-solving, clear feedback loop |

@@ -111,7 +111,11 @@ void InitAudio()
     sounds[static_cast<int>(SfxType::SOLVED)] =
         GenerateArpeggio();
     sounds[static_cast<int>(SfxType::ERROR)] =
-        GenerateSfx(0.08f, 150, 150, 0.5f, 1);
+        GenerateSfx(0.2f, 200, 100, 0.5f, 2);
+    sounds[static_cast<int>(SfxType::ROBOT_TALK)] =
+        GenerateSfx(0.03f, 700, 500, 0.12f, 0);
+    sounds[static_cast<int>(SfxType::ROBOT_BOOP)] =
+        GenerateSfx(0.1f, 500, 800, 0.6f, 0);
 }
 
 void PlaySfx(SfxType type)

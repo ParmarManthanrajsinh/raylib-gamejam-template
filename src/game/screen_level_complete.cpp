@@ -242,7 +242,7 @@ namespace
 
     void DrawAnimatedTitle(Font font, float anim_time, float center_x, float title_y)
     {
-        const char* title = "HEXFORGE";
+        const char* title = "HEX GATE";
         int title_len = static_cast<int>(strlen(title));
         float char_spacing = 4.0f;
 

@@ -33,11 +33,22 @@ Game::Game()
   selected_gate_index(-1),
   mouse_pos{-100, -100},
   ghost_pos{-100, -100},
-  screen_shake_time(0)
+  screen_shake_time(0),
+  level_timer(0),
+  robot_idle_timer(0),
+  robot_delete_count(0),
+  robot_last_action_time(0),
+  robot_last_mouse_pos{-100, -100},
+  robot_mouse_still_time(0),
+  robot_first_gate_placed(false),
+  robot_first_wire_connected(false),
+  robot_obstacle_attempts(0),
+  robot_matching_bits_prev(0)
 {
     render_target = LoadRenderTexture(SCREEN_WIDTH, SCREEN_HEIGHT);
     for (int i = 0; i < 4; i++) input_bits[i] = 0;
     for (int i = 0; i < 4; i++) output_bits[i] = 0;
+    for (int i = 0; i < 7; i++) robot_gate_type_counts[i] = 0;
     Reset();
 }
 Game::~Game()
@@ -45,7 +56,7 @@ Game::~Game()
     UnloadRenderTexture(render_target);
 }
 
-void Game::Reset()
+void Game::Reset(bool is_clear)
 {
     gates.clear();
     wires.clear();
@@ -84,7 +95,10 @@ void Game::Reset()
     screen_shake_time = 0;
     
     // Ensure the target is actually reachable? A random 1-15 is fine.
-    target_hex = GetRandomValue(1, 15);
+    if (!is_clear) {
+        target_hex = GetRandomValue(1, 15);
+        robot.OnLevelStart(target_hex);
+    }
     Evaluate();
 }
 
@@ -99,6 +113,8 @@ void Game::Evaluate()
         screen_shake_time = 0.4f;
         SpawnParticles({OUTPUT_CENTER_X, OUTPUT_CENTER_Y}, {0, 255, 136, 255}, 50);
         PlaySfx(SfxType::SOLVED);
+        
+        robot.OnSolved(gates.size(), wires.size(), level_timer);
         
         level_complete_delay = 1.5f;
         last_stats.gates_used = static_cast<int>(gates.size());
@@ -445,6 +461,10 @@ void Game::Draw()
     }
 
     EndMode2D();
+
+    if (game_state == GameState::PLAYING || is_level_complete_mode) {
+        robot.Draw(anim_time, mouse_pos);
+    }
     EndTextureMode();
 
     BeginDrawing();
