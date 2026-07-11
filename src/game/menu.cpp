@@ -4,7 +4,6 @@
 #include "text_util.h"
 #include "gates.h"
 #include <cmath>
-#include <cstdio>
 #include <cstring>
 #include <raylib.h>
 
@@ -310,7 +309,7 @@ namespace
     }
 }
 
-GameState UpdateTitleScreen(float anim_time)
+GameState UpdateTitleScreen(float)
 {
     if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE))
     {
@@ -338,7 +337,7 @@ GameState UpdateTitleScreen(float anim_time)
     return GameState::TITLE_SCREEN;
 }
 
-GameState UpdateHowToPlay(float anim_time)
+GameState UpdateHowToPlay(float)
 {
     if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE) || IsKeyPressed(KEY_H))
     {
@@ -525,7 +524,6 @@ void DrawHowToPlay(float anim_time, float transition_time)
     );
 
     int y = 120;
-    int line_h = 26;
 
     // --- VISUAL GOAL SECTION ---
     const char* h1 = "THE GOAL";
