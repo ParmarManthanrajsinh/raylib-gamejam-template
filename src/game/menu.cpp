@@ -233,7 +233,7 @@ namespace
     }
 }
 
-GameState UpdateTitleScreen()
+GameState UpdateTitleScreen(float anim_time)
 {
     if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE))
     {
@@ -261,7 +261,7 @@ GameState UpdateTitleScreen()
     return GameState::TITLE_SCREEN;
 }
 
-GameState UpdateHowToPlay()
+GameState UpdateHowToPlay(float anim_time)
 {
     if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE) || IsKeyPressed(KEY_H))
     {
