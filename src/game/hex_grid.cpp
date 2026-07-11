@@ -77,7 +77,8 @@ void DrawGrid
     Color fill_even = {10, 14, 28, 255};
     Color fill_odd = {8, 11, 22, 255};
     float breathe = 0.5f + 0.5f * sinf(anim_time * 2.0f);
-    Color outline = {
+    Color outline = 
+    {
         static_cast<unsigned char>(30 + 10 * breathe), 
         static_cast<unsigned char>(48 + 20 * breathe), 
         static_cast<unsigned char>(80 + 30 * breathe), 
@@ -98,7 +99,8 @@ void DrawGrid
             if (fmodf(anim_time * 60.0f + dist, 400.0f) < 15.0f) grid_pulse = 1.0f;
             
             Color out_col = outline;
-            if (grid_pulse > 0.0f) {
+            if (grid_pulse > 0.0f) 
+            {
                 out_col = {0, 150, 255, 100};
             }
             

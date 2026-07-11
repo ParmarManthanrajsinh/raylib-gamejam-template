@@ -31,8 +31,10 @@ GameState UpdateLevelComplete(float, const GameStats&)
         Rectangle next_btn = {btn_x, panel_y + 380.0f, btn_w, btn_h};
         Rectangle menu_btn = {btn_x, panel_y + 450.0f, btn_w, btn_h};
 
-        if (CheckCollisionPointRec(mpos, next_btn)) return GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION;
-        if (CheckCollisionPointRec(mpos, menu_btn)) return GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION;
+        if (CheckCollisionPointRec(mpos, next_btn)) 
+            return GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION;
+        if (CheckCollisionPointRec(mpos, menu_btn)) 
+            return GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION;
     }
 
     return GameState::LEVEL_COMPLETE;

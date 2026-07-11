@@ -6,55 +6,62 @@
 #include <cstdio>
 #include <raylib.h>
 
-
-static Rectangle GetPaletteButtonRect(int index)
+namespace
 {
-    float btn_w = 68;
-    float spacing = 4;
-    float total_gate = GATE_COUNT * btn_w + (GATE_COUNT - 1) * spacing;
-    float total = total_gate + spacing + 90;
-    float start_x = (720 - total) / 2;
-    return {start_x + index * (btn_w + spacing), 650.0f + 12.0f, btn_w, 32};
-}
-
-static void DrawPin(Vector2 pos, bool active, bool is_hovered, bool is_connected, bool show_delete)
-{
-    Color fill{};
-    if (is_hovered)
+    Rectangle GetPaletteButtonRect(int index)
     {
-        fill = WHITE;
+        float btn_w = 68;
+        float spacing = 4;
+        float total_gate = GATE_COUNT * btn_w + (GATE_COUNT - 1) * spacing;
+        float total = total_gate + spacing + 90;
+        float start_x = (720 - total) / 2;
+        return {start_x + index * (btn_w + spacing), 650.0f + 12.0f, btn_w, 32};
     }
-    else if (is_connected)
+    
+    void DrawPin(Vector2 pos, bool active, bool is_hovered, bool is_connected, bool show_delete)
     {
-        fill = active ? Color{0, 255, 255, 255} : Color{50, 150, 255, 255};
-    }
-    else
-    {
-        fill = active ? Color{0, 255, 255, 255} : Color{30, 80, 140, 255};
-    }
-
-    DrawCircleV(pos, 6.0f, fill); // PIN_RADIUS is 6
-    DrawCircleV(pos, 6.0f * 0.5f, WHITE);
-
-    if (is_hovered)
-    {
-        Color ring = show_delete ? Color{255, 50, 50, 255} : Color{0, 255, 255, 255};
-        DrawCircleLines(static_cast<int>(pos.x), static_cast<int>(pos.y), 6.0f + 4.0f, ring);
-        if (show_delete)
+        Color fill{};
+        if (is_hovered)
         {
-            DrawTextShadowed
+            fill = WHITE;
+        }
+        else if (is_connected)
+        {
+            fill = active ? Color{0, 255, 255, 255} : Color{50, 150, 255, 255};
+        }
+        else
+        {
+            fill = active ? Color{0, 255, 255, 255} : Color{30, 80, 140, 255};
+        }
+    
+        DrawCircleV(pos, 6.0f, fill); // PIN_RADIUS is 6
+        DrawCircleV(pos, 6.0f * 0.5f, WHITE);
+    
+        if (is_hovered)
+        {
+            Color ring = show_delete ? Color{255, 50, 50, 255} : Color{0, 255, 255, 255};
+            DrawCircleLines
             (
-                GetGameFont(), 
-                "X", 
-                static_cast<int>(pos.x) - 4,
-                static_cast<int>(pos.y) - 5,
-                10,
-                RED
+                static_cast<int>(pos.x), 
+                static_cast<int>(pos.y), 
+                6.0f + 4.0f, 
+                ring
             );
+            if (show_delete)
+            {
+                DrawTextShadowed
+                (
+                    GetGameFont(), 
+                    "X", 
+                    static_cast<int>(pos.x) - 4,
+                    static_cast<int>(pos.y) - 5,
+                    10,
+                    RED
+                );
+            }
         }
     }
 }
-
 
 void DrawBackground()
 {
@@ -68,7 +75,13 @@ void DrawBackground()
         for (int x = -20; x < 750; x += 35)
         {
             float x_offset = (y % 80 == 0) ? 0 : 17.5f;
-            DrawHexOutline({x + x_offset - bg_offset, static_cast<float>(y)}, 16.0f, 1.0f, {30, 45, 80, 30});
+            DrawHexOutline
+            (
+                {x + x_offset - bg_offset, static_cast<float>(y)}, 
+                16.0f, 
+                1.0f, 
+                {30, 45, 80, 30}
+            );
         }
     }
 
@@ -76,21 +89,43 @@ void DrawBackground()
     float time = GetTime();
     for(int i = 0; i < 50; i++) 
     {
-        float px = fmodf(static_cast<float>(i * 137) + time * 10.0f * (1.0f + (i%3)*0.5f), 720.0f);
-        float py = fmodf(static_cast<float>(i * 93) - time * 5.0f * (1.0f + (i%5)*0.2f) + 720.0f, 720.0f);
-        DrawCircleV({px, py}, (i%2==0) ? 1.5f : 0.8f, {0, 200, 255, static_cast<unsigned char>(10 + (i%20))});
+        float px = fmodf
+        (
+            static_cast<float>(i * 137) + time * 10.0f * (1.0f + (i%3)*0.5f), 
+            720.0f
+        );
+        float py = fmodf
+        (
+            static_cast<float>(i * 93) - time * 5.0f * (1.0f + (i%5)*0.2f) + 720.0f, 
+            720.0f
+        );
+        DrawCircleV
+        (
+            {px, py}, 
+            (i%2==0) ? 1.5f : 0.8f, 
+            {0, 200, 255, static_cast<unsigned char>(10 + (i%20))}
+        );
     }
 
     // Info bar background
     DrawRectangle(0, 0, 720, static_cast<int>(INFO_BAR_H), {8, 12, 28, 220});
-    DrawLine(0, static_cast<int>(INFO_BAR_H), 720, static_cast<int>(INFO_BAR_H), {0, 200, 255, 150});
+    DrawLine
+    (
+        0, static_cast<int>(INFO_BAR_H), 720, static_cast<int>(INFO_BAR_H), 
+        {0, 200, 255, 150}
+    );
 
     // Grid area background with modern border
     Rectangle grid_rect = GetGridRect();
     Color grid_bg = {6, 10, 22, 200};
     DrawRectangleRec(grid_rect, grid_bg);
     DrawRectangleLinesEx(grid_rect, 2, {20, 150, 255, 100});
-    DrawRectangleLinesEx({grid_rect.x-2, grid_rect.y-2, grid_rect.width+4, grid_rect.height+4}, 1, {0, 100, 200, 50});
+    DrawRectangleLinesEx
+    (
+        {grid_rect.x-2, grid_rect.y-2, grid_rect.width+4, grid_rect.height+4}, 
+        1, 
+        {0, 100, 200, 50}
+    );
 
     // Lane guides from inputs to grid
     float grid_left_x = GRID_X - HEX_SIZE * SQRT3 / 2;
@@ -103,7 +138,8 @@ void DrawBackground()
     }
 
     // Lane guides from grid to output
-    float grid_right_x = GRID_X + (GRID_COLS - 1) * SPACING_X + SPACING_X / 2 + HEX_SIZE * SQRT3 / 2;
+    float grid_right_x = 
+        GRID_X + (GRID_COLS - 1) * SPACING_X + SPACING_X / 2 + HEX_SIZE * SQRT3 / 2;
     for (int b = 0; b < 4; b++)
     {
         Vector2 pin = GetOutputNodeInputPin(b);
@@ -121,7 +157,14 @@ void DrawBackground()
         static_cast<int>(PALETTE_Y - 2), 
         {0, 200, 255, 150}
     );
-    DrawRectangle(0, static_cast<int>(PALETTE_Y - 1), 720, static_cast<int>(PALETTE_H + 4), {8, 12, 28, 240});
+    DrawRectangle
+    (
+        0, 
+        static_cast<int>(PALETTE_Y - 1), 
+        720, 
+        static_cast<int>(PALETTE_H + 4), 
+        {8, 12, 28, 240}
+    );
     DrawLine
     (
         0, 
@@ -143,7 +186,11 @@ void DrawInfoBar(int target_hex, int current_hex, bool solved, float anim_time)
     // Tech panel
     DrawRectangleRounded({panel_x, panel_y, panel_w, panel_h}, 0.5f, 4, {10, 14, 28, 220});
     
-    Color border_color = solved ? ColorAlpha({0, 255, 136, 255}, 0.8f + 0.2f * sinf(anim_time * 10.0f)) : Color{0, 150, 255, 150};
+    Color border_color = solved ? ColorAlpha
+    (
+        {0, 255, 136, 255}, 
+        0.8f + 0.2f * sinf(anim_time * 10.0f)
+    ) : Color{0, 150, 255, 150};
     DrawRectangleRoundedLines({panel_x, panel_y, panel_w, panel_h}, 0.5f, 4, border_color);
     
     // Glitch / Shake if solved
@@ -152,18 +199,42 @@ void DrawInfoBar(int target_hex, int current_hex, bool solved, float anim_time)
     
     char target_text[32];
     snprintf(target_text, sizeof(target_text), "TARGET: 0x%X", target_hex);
-    DrawTextShadowed(font, target_text, static_cast<int>(panel_x + 30 + rx), static_cast<int>(panel_y + 14 + ry), 16, {136, 153, 187, 255});
+    DrawTextShadowed
+    (
+        font, 
+        target_text, 
+        static_cast<int>(panel_x + 30 + rx), 
+        static_cast<int>(panel_y + 14 + ry), 
+        16, 
+        {136, 153, 187, 255}
+    );
 
     char output_text[32];
     snprintf(output_text, sizeof(output_text), "OUT: 0x%X", current_hex);
     Color output_color = solved ? Color{0, 255, 136, 255} : WHITE;
-    DrawTextShadowed(font, output_text, static_cast<int>(panel_x + 220 + rx), static_cast<int>(panel_y + 14 + ry), 16, output_color);
+    DrawTextShadowed
+    (
+        font, 
+        output_text, 
+        static_cast<int>(panel_x + 220 + rx), 
+        static_cast<int>(panel_y + 14 + ry), 
+        16, 
+        output_color
+    );
 
     if (solved)
     {
         float pulse = 0.7f + 0.3f * sinf(anim_time * 8);
         Color solved_color = {0, 255, 136, static_cast<unsigned char>(255 * pulse)};
-        DrawTextShadowed(font, "MATCH!", static_cast<int>(panel_x + panel_w + 20), static_cast<int>(panel_y + 14), 16, solved_color);
+        DrawTextShadowed
+        (
+            font, 
+            "MATCH!", 
+            static_cast<int>(panel_x + panel_w + 20), 
+            static_cast<int>(panel_y + 14), 
+            16, 
+            solved_color
+        );
     }
 }
 
@@ -181,11 +252,21 @@ void DrawInputNodes(int input_bits[4], const t_Pin* hovered_pin, float anim_time
         Rectangle batt_rect = {INPUT_X - 22, y - 14, 34, 28};
         DrawRectangleRounded(batt_rect, 0.3f, 4, {10, 14, 28, 255});
         
-        Color glow = active ? ColorAlpha({0, 255, 255, 255}, 0.8f + 0.2f * sinf(anim_time * 5.0f)) : ColorAlpha({0, 100, 150, 255}, 0.3f);
+        Color glow = active ? ColorAlpha
+        (
+            {0, 255, 255, 255}, 0.8f + 0.2f * sinf(anim_time * 5.0f)
+        ) : ColorAlpha({0, 100, 150, 255}, 0.3f);
         DrawRectangleRoundedLines(batt_rect, 0.3f, 4, glow);
         
-        if (active) {
-            DrawRectangleRounded({batt_rect.x + 4, batt_rect.y + 4, batt_rect.width - 8, batt_rect.height - 8}, 0.2f, 4, ColorAlpha(glow, 0.6f));
+        if (active) 
+        {
+            DrawRectangleRounded
+            (
+                {batt_rect.x + 4, batt_rect.y + 4, batt_rect.width - 8, batt_rect.height - 8}, 
+                0.2f, 
+                4, 
+                ColorAlpha(glow, 0.6f)
+            );
         }
         
         // Battery tip
@@ -194,7 +275,15 @@ void DrawInputNodes(int input_bits[4], const t_Pin* hovered_pin, float anim_time
         // Label
         char label[8];
         snprintf(label, sizeof(label), "IN%d", i);
-        DrawTextShadowed(GetGameFont(), label, static_cast<int>(INPUT_X - 52), static_cast<int>(y - 7), 12, {200, 215, 235, 255});
+        DrawTextShadowed
+        (
+            GetGameFont(), 
+            label, 
+            static_cast<int>(INPUT_X - 52), 
+            static_cast<int>(y - 7), 
+            12, 
+            {200, 215, 235, 255}
+        );
 
         // Output pin
         Vector2 pin_pos = GetInputNodeOutputPin(i);
@@ -202,7 +291,14 @@ void DrawInputNodes(int input_bits[4], const t_Pin* hovered_pin, float anim_time
     }
 }
 
-void DrawOutputNode(int output_bits[4], int target_hex, const t_Pin* hovered_pin, bool has_wire, float anim_time)
+void DrawOutputNode
+(
+    int output_bits[4], 
+    int target_hex, 
+    const t_Pin* hovered_pin, 
+    bool has_wire, 
+    float anim_time
+)
 {
     float cx = OUTPUT_CENTER_X;
     float cy = OUTPUT_CENTER_Y;
@@ -225,15 +321,37 @@ void DrawOutputNode(int output_bits[4], int target_hex, const t_Pin* hovered_pin
     DrawRectangleRounded(main_rect, 0.1f, 4, {10, 12, 24, 255});
     Color border = match ? Color{0, 255, 136, 255} : Color{0, 150, 255, 255};
     DrawRectangleRoundedLines(main_rect, 0.1f, 4, border);
-    DrawRectangleRoundedLines({main_rect.x + 3, main_rect.y + 3, main_rect.width - 6, main_rect.height - 6}, 0.1f, 4, ColorAlpha(border, 0.4f));
+    DrawRectangleRoundedLines
+    (
+        {main_rect.x + 3, main_rect.y + 3, main_rect.width - 6, main_rect.height - 6}, 
+        0.1f, 
+        4, 
+        ColorAlpha(border, 0.4f)
+    );
 
     Font font = GetGameFont();
-    DrawTextShadowed(font, "OUTPUT CORE", static_cast<int>(cx - 45), static_cast<int>(cy - 65), 11, {100, 200, 255, 200});
+    DrawTextShadowed
+    (
+        font, 
+        "OUTPUT CORE", 
+        static_cast<int>(cx - 45), 
+        static_cast<int>(cy - 65), 
+        11, 
+        {100, 200, 255, 200}
+    );
 
     char hex_text[16];
     snprintf(hex_text, sizeof(hex_text), "0x%X", val);
     Color hex_color = match ? Color{0, 255, 136, 255} : WHITE;
-    DrawTextShadowed(font, hex_text, static_cast<int>(cx - 36), static_cast<int>(cy - 30), 32, hex_color);
+    DrawTextShadowed
+    (
+        font, 
+        hex_text, 
+        static_cast<int>(cx - 36), 
+        static_cast<int>(cy - 30), 
+        32, 
+        hex_color
+    );
 
     // Bit indicators (Neon glow)
     for (int b = 0; b < 4; b++)
@@ -241,16 +359,26 @@ void DrawOutputNode(int output_bits[4], int target_hex, const t_Pin* hovered_pin
         float bx = cx - 30 + b * 20;
         float by = cy + 45;
         Color bit_color = output_bits[b] ? Color{0, 255, 255, 255} : Color{20, 40, 60, 255};
-        if (output_bits[b]) {
+        if (output_bits[b]) 
+        {
             DrawCircleV({bx, by}, 8, ColorAlpha(bit_color, 0.4f)); // Glow
             DrawCircleV({bx, by}, 4, WHITE);
-        } else {
+        } 
+        else 
+        {
             DrawCircleV({bx, by}, 4, bit_color);
         }
 
         char bit_label[4];
         snprintf(bit_label, sizeof(bit_label), "b%d", b);
-        DrawTextShadowed(font, bit_label, static_cast<int>(bx - 6), static_cast<int>(by + 12), 10, {102, 119, 153, 255});
+        DrawTextShadowed
+        (
+            font, 
+            bit_label, 
+            static_cast<int>(bx - 6),
+            static_cast<int>(by + 12), 
+            10, {102, 119, 153, 255}
+        );
     }
 
     // Input pins
@@ -291,24 +419,46 @@ void DrawPalette(int selected_index)
             r.width += 4; r.height += 4;
         }
 
-        Color bg = is_selected ? Color{0, 100, 150, 255} : (is_hovered ? Color{20, 40, 70, 255} : Color{15, 25, 45, 255});
-        Color border = is_selected ? Color{0, 255, 255, 255} : (is_hovered ? Color{0, 200, 255, 255} : Color{40, 80, 120, 255});
+        Color bg = is_selected ? Color{0, 100, 150, 255} : 
+            (is_hovered ? Color{20, 40, 70, 255} : Color{15, 25, 45, 255});
+        Color border = is_selected ? Color{0, 255, 255, 255} : 
+            (is_hovered ? Color{0, 200, 255, 255} : Color{40, 80, 120, 255});
 
         if (is_selected || is_hovered)
         {
-            DrawRectangleRounded({r.x-2, r.y-2, r.width+4, r.height+4}, 0.2f, 6, ColorAlpha(border, 0.4f));
+            DrawRectangleRounded
+            (
+                {r.x-2, r.y-2, r.width+4, r.height+4}, 
+                0.2f, 
+                6, 
+                ColorAlpha(border, 0.4f)
+            );
             
             // Animated circuit border from menu
             float anim_time = GetTime();
             float border_anim = fmodf(anim_time * 200.0f, r.width + r.height);
             Color anim_col = {0, 255, 255, 255};
-            if (border_anim < r.width) {
+            if (border_anim < r.width) 
+            {
                 DrawLineEx({r.x + border_anim, r.y}, {r.x + border_anim + 15, r.y}, 3.0f, anim_col);
-                DrawLineEx({r.x + r.width - border_anim, r.y + r.height}, {r.x + r.width - border_anim - 15, r.y + r.height}, 3.0f, anim_col);
-            } else {
+                DrawLineEx
+                (
+                    {r.x + r.width - border_anim, r.y + r.height}, 
+                    {r.x + r.width - border_anim - 15, r.y + r.height}, 
+                    3.0f, anim_col
+                );
+            }
+            else 
+            {
                 float h_anim = border_anim - r.width;
-                DrawLineEx({r.x + r.width, r.y + h_anim}, {r.x + r.width, r.y + h_anim + 15}, 3.0f, anim_col);
-                DrawLineEx({r.x, r.y + r.height - h_anim}, {r.x, r.y + r.height - h_anim - 15}, 3.0f, anim_col);
+                DrawLineEx
+                (
+                    {r.x + r.width, r.y + h_anim}, {r.x + r.width, r.y + h_anim + 15}, 3.0f, anim_col
+                );
+                DrawLineEx
+                (   
+                    {r.x, r.y + r.height - h_anim}, {r.x, r.y + r.height - h_anim - 15}, 3.0f, anim_col
+                );
             }
         }
 
@@ -340,9 +490,25 @@ void DrawPalette(int selected_index)
         clear_r.width += 4; clear_r.height += 4;
     }
     
-    DrawRectangleRounded({clear_r.x-2, clear_r.y-2, clear_r.width+4, clear_r.height+4}, 0.2f, 6, ColorAlpha(RED, clear_hovered ? 0.4f : 0.2f));
-    DrawRectangleRounded(clear_r, 0.2f, 6, clear_hovered ? Color{60, 15, 20, 255} : Color{40, 10, 15, 255});
-    DrawRectangleRoundedLines(clear_r, 0.2f, 6, clear_hovered ? Color{255, 100, 100, 255} : Color{255, 50, 80, 255});
-    DrawTextCentered(GetGameFont(), "CLEAR", clear_r, 14, clear_hovered ? WHITE : Color{255, 100, 120, 255});
+    DrawRectangleRounded
+    (
+        {clear_r.x-2, clear_r.y-2, clear_r.width+4, clear_r.height+4}, 
+        0.2f, 6, 
+        ColorAlpha(RED, clear_hovered ? 0.4f : 0.2f)
+    );
+    DrawRectangleRounded
+    (
+        clear_r, 0.2f, 6,
+        clear_hovered ? Color{60, 15, 20, 255} : Color{40, 10, 15, 255}
+    );
+    DrawRectangleRoundedLines
+    (
+        clear_r, 0.2f, 6,
+        clear_hovered ? Color{255, 100, 100, 255} : Color{255, 50, 80, 255}
+    );
+    DrawTextCentered
+    (
+        GetGameFont(), "CLEAR", clear_r, 14, clear_hovered ? WHITE : Color{255, 100, 120, 255}
+    );
 }
 

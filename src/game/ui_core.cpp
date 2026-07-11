@@ -1,9 +1,9 @@
 #include "ui.h"
 #include "assets.h"
 #include "text_util.h"
-#include "hex_grid.h"
+#include "hex_grid.h" // IWYU pragma: keep
 #include <cmath>
-#include <cstdio>
+#include <cstdio> // IWYU pragma: keep
 #include <raylib.h>
 
 
@@ -35,7 +35,13 @@ void DrawMenuButton(float anim_time)
     if (hovered)
     {
         float pulse = 0.5f + 0.5f * sinf(anim_time * 4.0f);
-        DrawRectangleRounded({ r.x - 2, r.y - 2, r.width + 4, r.height + 4 }, 0.3f, 6, ColorAlpha(SKYBLUE, 0.15f * pulse));
+        DrawRectangleRounded
+        (
+            { r.x - 2, r.y - 2, r.width + 4, r.height + 4 },
+            0.3f,
+            6,
+            ColorAlpha(SKYBLUE, 0.15f * pulse)
+        );
     }
 
     DrawRectangleRounded(r, 0.3f, 6, bg);
@@ -44,7 +50,11 @@ void DrawMenuButton(float anim_time)
     Vector2 text_size = MeasureTextEx(font, "MENU", 14.0f, 1.0f);
     float tx = r.x + (r.width - text_size.x) / 2.0f;
     float ty = r.y + (r.height - text_size.y) / 2.0f;
-    DrawTextShadowed(font, "MENU", static_cast<int>(tx), static_cast<int>(ty), 14, hovered ? WHITE : Color{ 150, 180, 220, 255 });
+    DrawTextShadowed
+    (
+        font, "MENU", static_cast<int>(tx), static_cast<int>(ty), 14,
+        hovered ? WHITE : Color{ 150, 180, 220, 255 }
+    );
 }
 
 

@@ -29,4 +29,10 @@ GameState UpdateHowToPlay(float anim_time);
 GameState UpdateLevelComplete(float anim_time, const GameStats& stats);
 void DrawTitleScreen(float anim_time, float transition_time = 0.0f);
 void DrawHowToPlay(float anim_time, float transition_time = 0.0f);
-void DrawLevelComplete(float anim_time, float transition_time, const GameStats& stats, GameState game_state);
+void DrawLevelComplete
+(
+    float anim_time,
+    float transition_time,
+    const GameStats& stats,
+    GameState game_state
+);
