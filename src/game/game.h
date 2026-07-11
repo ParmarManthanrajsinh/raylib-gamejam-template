@@ -53,6 +53,7 @@ class Game
         // Core state
         std::vector<t_Gate> gates;
         std::vector<t_Wire> wires;
+        std::vector<t_HexCell> obstacles;
         int input_bits[4];
         int output_bits[4];
         std::unordered_map<int, int> gate_outputs;
@@ -62,6 +63,9 @@ class Game
         float anim_time;
         float solved_pulse;
         float transition_time;
+        float level_complete_delay;
+        float level_timer;
+        GameStats last_stats;
 
         // UI state
         int selected_gate_index; // -1 = none

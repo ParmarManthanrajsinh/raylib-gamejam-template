@@ -50,9 +50,24 @@ void Game::Reset()
     gates.clear();
     wires.clear();
     gate_outputs.clear();
+    obstacles.clear();
 
-    for (int i = 0; i < 4; i++) input_bits[i] = 0;
+    for (int i = 0; i < 4; i++) input_bits[i] = GetRandomValue(0, 1);
     for (int i = 0; i < 4; i++) output_bits[i] = 0;
+
+    // Generate obstacles
+    int num_obstacles = GetRandomValue(3, 6);
+    for (int i = 0; i < num_obstacles; i++)
+    {
+        t_HexCell obs{};
+        obs.row = GetRandomValue(2, 6);
+        obs.col = GetRandomValue(2, 6);
+        bool exists = false;
+        for (const auto& o : obstacles) {
+            if (o.row == obs.row && o.col == obs.col) { exists = true; break; }
+        }
+        if (!exists) obstacles.push_back(obs);
+    }
 
     gate_id_counter = 1;
     selected_gate_index = -1;
@@ -64,9 +79,12 @@ void Game::Reset()
     solved_pulse = 0;
     transition_time = 0;
     anim_time = 0;
+    level_timer = 0;
+    level_complete_delay = 0;
     screen_shake_time = 0;
+    
+    // Ensure the target is actually reachable? A random 1-15 is fine.
     target_hex = GetRandomValue(1, 15);
-    if (target_hex == 0) target_hex = 10;
     Evaluate();
 }
 
@@ -81,6 +99,13 @@ void Game::Evaluate()
         screen_shake_time = 0.4f;
         SpawnParticles({OUTPUT_CENTER_X, OUTPUT_CENTER_Y}, {0, 255, 136, 255}, 50);
         PlaySfx(SfxType::SOLVED);
+        
+        level_complete_delay = 1.5f;
+        last_stats.gates_used = static_cast<int>(gates.size());
+        last_stats.wires_used = static_cast<int>(wires.size());
+        last_stats.time_taken = level_timer;
+        last_stats.efficiency_score = 10000 - static_cast<int>(level_timer * 10) - (last_stats.gates_used * 50) - (last_stats.wires_used * 25);
+        if (last_stats.efficiency_score < 0) last_stats.efficiency_score = 0;
     }
 }
 
@@ -172,18 +197,7 @@ t_PinHit Game::FindPinAt(Vector2 pos)
 // Event handlers
 void Game::HandleClick(Vector2 pos)
 {
-    // Input node toggles
-    for (int i = 0; i < 4; i++)
-    {
-        if (Dist(pos, {INPUT_X, GetInputNodeY(i)}) <= 20)
-        {
-            input_bits[i] ^= 1;
-            SpawnParticles({INPUT_X, GetInputNodeY(i)}, input_bits[i] ? Color{0, 255, 255, 255} : Color{50, 100, 150, 255}, 10);
-            PlaySfx(SfxType::TOGGLE_INPUT);
-            Evaluate();
-            return;
-        }
-    }
+    // Input node toggles removed - inputs are now locked for difficulty.
 
     t_PinHit clicked_pin = FindPinAt(pos);
 
@@ -201,7 +215,6 @@ void Game::HandleClick(Vector2 pos)
             w.to_pin = clicked_pin.pin_index;
 
             bool is_self = (w.from_type == 1 && w.to_type == 0 && w.from_id == w.to_id);
-
             if (!is_self)
             {
                 wires.erase
@@ -340,7 +353,12 @@ void Game::HandleClick(Vector2 pos)
 
     // Grid placement
     t_HexCell cell = GetGridCell(pos);
-    if (cell.IsValid() && selected_gate_index >= 0 && !FindGateAt(cell.row, cell.col))
+    bool is_obstacle = false;
+    for (const auto& o : obstacles) {
+        if (o.row == cell.row && o.col == cell.col) { is_obstacle = true; break; }
+    }
+
+    if (cell.IsValid() && selected_gate_index >= 0 && !FindGateAt(cell.row, cell.col) && !is_obstacle)
     {
         t_Gate ng{};
         ng.id = gate_id_counter++;
@@ -480,10 +498,75 @@ void Game::Update()
             }
         }
 
+        else if (game_state == GameState::LEVEL_COMPLETE)
+        {
+            GameState next = UpdateLevelComplete(anim_time, last_stats);
+            if (next == GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION)
+            {
+                game_state = GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION;
+                PlaySfx(SfxType::SOLVED);
+            }
+            else if (next == GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION)
+            {
+                game_state = GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION;
+                PlaySfx(SfxType::SOLVED);
+            }
+        }
+        else if (game_state == GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION)
+        {
+            float dt = GetFrameTime();
+            transition_time += dt;
+            if (transition_time >= 0.8f)
+            {
+                game_state = GameState::LEVEL_COMPLETE;
+                transition_time = 0;
+            }
+        }
+        else if (game_state == GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION)
+        {
+            float dt = GetFrameTime();
+            transition_time += dt;
+            if (transition_time >= 0.8f)
+            {
+                game_state = GameState::PLAYING;
+                transition_time = 0;
+                Reset(); // fresh board
+            }
+        }
+        else if (game_state == GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION)
+        {
+            float dt = GetFrameTime();
+            transition_time += dt;
+            if (transition_time >= 0.8f)
+            {
+                game_state = GameState::TITLE_SCREEN;
+                transition_time = 0;
+            }
+        }
+
         float dt = GetFrameTime();
         anim_time += dt;
         if (screen_shake_time > 0) screen_shake_time -= dt;
         return;
+    }
+
+    if (!solved)
+    {
+        level_timer += GetFrameTime();
+    }
+    else
+    {
+        if (level_complete_delay > 0)
+        {
+            level_complete_delay -= GetFrameTime();
+            if (level_complete_delay <= 0)
+            {
+                game_state = GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION;
+                transition_time = 0;
+                PlaySfx(SfxType::SOLVED); // swoosh sound for menu transition
+                return;
+            }
+        }
     }
 
     mouse_pos = GetMousePosition();
@@ -501,8 +584,13 @@ void Game::Update()
         {
             if (hovered_cell.IsValid())
             {
+                bool is_obstacle = false;
+                for (const auto& o : obstacles) {
+                    if (o.row == hovered_cell.row && o.col == hovered_cell.col) { is_obstacle = true; break; }
+                }
+
                 t_Gate* existing = FindGateAt(hovered_cell.row, hovered_cell.col);
-                if (!existing || existing->id == dragging_gate_id)
+                if (!is_obstacle && (!existing || existing->id == dragging_gate_id))
                 {
                     t_Gate* g = FindGateById(dragging_gate_id);
                     if (g)
@@ -553,26 +641,7 @@ void Game::Update()
     ghost_pos.x += (mouse_pos.x - ghost_pos.x) * dt * 15.0f;
     ghost_pos.y += (mouse_pos.y - ghost_pos.y) * dt * 15.0f;
 
-    if (IsKeyPressed(KEY_ONE))
-    {
-        input_bits[0] ^= 1;
-        Evaluate();
-    }
-    if (IsKeyPressed(KEY_TWO))
-    {
-        input_bits[1] ^= 1;
-        Evaluate();
-    }
-    if (IsKeyPressed(KEY_THREE))
-    {
-        input_bits[2] ^= 1;
-        Evaluate();
-    }
-    if (IsKeyPressed(KEY_FOUR))
-    {
-        input_bits[3] ^= 1;
-        Evaluate();
-    }
+    // Keyboard input toggles removed for fixed difficulty
     if (IsKeyPressed(KEY_R))
     {
         target_hex = GetRandomValue(1, 15);
@@ -595,7 +664,12 @@ void Game::Update()
 
 void Game::Draw()
 {
-    if (game_state != GameState::PLAYING)
+    bool is_level_complete_mode = (game_state == GameState::LEVEL_COMPLETE || 
+                                   game_state == GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION || 
+                                   game_state == GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION ||
+                                   game_state == GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION);
+
+    if (game_state != GameState::PLAYING && !is_level_complete_mode)
     {
         BeginDrawing();
         if (game_state == GameState::TITLE_SCREEN || game_state == GameState::TITLE_TO_PLAY_TRANSITION || game_state == GameState::TITLE_TO_HOW_TO_PLAY_TRANSITION)
@@ -634,6 +708,17 @@ void Game::Draw()
         hovered_cell.IsValid() &&
         FindGateAt(hovered_cell.row, hovered_cell.col) != nullptr;
     DrawGrid(hovered_cell, has_selection, cell_occupied, anim_time);
+
+    // Draw obstacles
+    for (const auto& obs : obstacles)
+    {
+        Vector2 c = GetHexCenter(obs.row, obs.col);
+        DrawPoly(c, 6, HEX_SIZE * 0.95f, 90.0f, ColorAlpha({20, 0, 0, 255}, 0.8f));
+        DrawPolyLinesEx(c, 6, HEX_SIZE * 0.95f, 90.0f, 2.0f, ColorAlpha(RED, 0.5f));
+        // Draw cross/stripes to make it look like an obstacle
+        DrawLineEx({c.x - HEX_SIZE*0.5f, c.y - HEX_SIZE*0.5f}, {c.x + HEX_SIZE*0.5f, c.y + HEX_SIZE*0.5f}, 2.0f, ColorAlpha(RED, 0.3f));
+        DrawLineEx({c.x - HEX_SIZE*0.5f, c.y + HEX_SIZE*0.5f}, {c.x + HEX_SIZE*0.5f, c.y - HEX_SIZE*0.5f}, 2.0f, ColorAlpha(RED, 0.3f));
+    }
 
     Vector2 drag_pos = {-1000, -1000};
     if (dragging_gate_id != -1)
@@ -784,7 +869,6 @@ void Game::Draw()
             }
         );
     DrawOutputNode(output_bits, target_hex, hover_pin_ptr, has_out_wire, anim_time);
-
     DrawPalette(selected_gate_index);
     DrawMenuButton(anim_time);
 
@@ -802,6 +886,23 @@ void Game::Draw()
         Color c = p.color;
         c.a = static_cast<unsigned char>(255 * (p.life / p.max_life));
         DrawCircleV(p.pos, 3.0f * (p.life / p.max_life), c);
+    }
+
+    if (is_level_complete_mode)
+    {
+        float bg_alpha = 0.85f;
+        if (game_state == GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION)
+        {
+            bg_alpha = 0.85f * (transition_time / 0.8f);
+        }
+        else if (game_state == GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION || game_state == GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION)
+        {
+            // Keep bg_alpha at 0.85f while panel shrinks, then we will use a black circle wipe in DrawLevelComplete
+            bg_alpha = 0.85f;
+        }
+
+        DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, ColorAlpha(BLACK, bg_alpha));
+        DrawLevelComplete(anim_time, transition_time, last_stats, game_state);
     }
 
     EndMode2D();
