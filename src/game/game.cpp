@@ -315,6 +315,15 @@ void Game::HandleClick(Vector2 pos)
         return;
     }
 
+    // Menu button
+    if (CheckMenuButtonClick(pos))
+    {
+        game_state = GameState::PLAYING_TO_TITLE_TRANSITION;
+        transition_time = 0;
+        PlaySfx(SfxType::SOLVED);
+        return;
+    }
+
     // Clear button
     if (CheckCollisionPointRec(pos, GetClearButtonRect()))
     {
@@ -379,7 +388,10 @@ void Game::HandleRightClick(Vector2 pos)
                 std::remove_if
                 (
                     gates.begin(), gates.end(),
-                    [&](const t_Gate& g) { return g.id == gate->id; }
+                    [&](const t_Gate& g)
+                    {
+                        return g.id == gate->id;
+                    }
                 ),
                 gates.end()
             );
@@ -434,6 +446,16 @@ void Game::Update()
             }
         }
         else if (game_state == GameState::HOW_TO_PLAY_TO_TITLE_TRANSITION)
+        {
+            float dt = GetFrameTime();
+            transition_time += dt;
+            if (transition_time >= 0.8f)
+            {
+                game_state = GameState::TITLE_SCREEN;
+                transition_time = 0;
+            }
+        }
+        else if (game_state == GameState::PLAYING_TO_TITLE_TRANSITION)
         {
             float dt = GetFrameTime();
             transition_time += dt;
@@ -515,8 +537,16 @@ void Game::Update()
         p.pos.y += p.vel.y * dt;
         p.life -= dt;
     }
-    particles.erase(
-        std::remove_if(particles.begin(), particles.end(), [](const Particle& p) { return p.life <= 0; }),
+    particles.erase
+    (
+        std::remove_if
+        (
+            particles.begin(), particles.end(),
+            [](const Particle& p)
+            {
+                return p.life <= 0;
+            }
+        ),
         particles.end()
     );
 
@@ -557,6 +587,9 @@ void Game::Update()
     {
         selected_gate_index = -1;
         wire_drag_state = {};
+        game_state = GameState::PLAYING_TO_TITLE_TRANSITION;
+        transition_time = 0;
+        PlaySfx(SfxType::SOLVED);
     }
 }
 
@@ -566,6 +599,10 @@ void Game::Draw()
     {
         BeginDrawing();
         if (game_state == GameState::TITLE_SCREEN || game_state == GameState::TITLE_TO_PLAY_TRANSITION || game_state == GameState::TITLE_TO_HOW_TO_PLAY_TRANSITION)
+        {
+            DrawTitleScreen(anim_time, transition_time);
+        }
+        else if (game_state == GameState::PLAYING_TO_TITLE_TRANSITION)
         {
             DrawTitleScreen(anim_time, transition_time);
         }
@@ -727,11 +764,15 @@ void Game::Draw()
         std::any_of
         (
             wires.begin(), wires.end(),
-            [](const t_Wire& w) { return w.to_type == 1; }
+            [](const t_Wire& w)
+            {
+                return w.to_type == 1;
+            }
         );
     DrawOutputNode(output_bits, target_hex, hover_pin_ptr, has_out_wire, anim_time);
 
     DrawPalette(selected_gate_index);
+    DrawMenuButton(anim_time);
 
     int hex_val = output_bits[0] + output_bits[1] * 2 + output_bits[2] * 4 +
         output_bits[3] * 8;

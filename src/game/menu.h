@@ -8,7 +8,8 @@ enum class GameState
     HOW_TO_PLAY,
     HOW_TO_PLAY_TO_PLAY_TRANSITION,
     HOW_TO_PLAY_TO_TITLE_TRANSITION,
-    PLAYING
+    PLAYING,
+    PLAYING_TO_TITLE_TRANSITION
 };
 
 GameState UpdateTitleScreen(float anim_time);

@@ -1,7 +1,7 @@
 #include "hex_grid.h"
 #include <cmath>
 #include <raylib.h>
-static constexpr float BG_MARGIN = 16.0f;
+static constexpr float bg_margin = 16.0f;
 
 void DrawFilledHexagon(Vector2 center, float size, Color fill)
 {
@@ -59,10 +59,10 @@ Rectangle GetGridRect()
 
     return 
     {
-        left - BG_MARGIN, 
-        top - BG_MARGIN, 
-        (right - left) + BG_MARGIN * 2,
-        (bottom - top) + BG_MARGIN * 2
+        left - bg_margin, 
+        top - bg_margin, 
+        (right - left) + bg_margin * 2,
+        (bottom - top) + bg_margin * 2
     };
 }
 
