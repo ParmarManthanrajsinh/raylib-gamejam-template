@@ -9,14 +9,13 @@
 
 namespace
 {
-    const char* funny_taglines[] =
+    const char* funny_taglines[11] =
     {
         "Where logic gates come to party",
         "Now with 100% more AND-ing",
         "0x48 0x45 0x58 0x46 0x4F 0x52 0x47 0x45",
         "Beats touching grass",
         "Your CPU is jealous",
-        "Not a to-do list app",
         "Finally, a use for boolean algebra",
         "Hex and the City",
         "Gate Expectations",
@@ -486,59 +485,41 @@ void DrawHowToPlay(float anim_time, float transition_time)
 {
     ClearBackground({13, 13, 26, 255});
 
-    // Add very faint background so it's not totally empty but not distracting
     for (int i = 0; i < 40; i++)
     {
         DrawRectangleLines(i, i, SCREEN_WIDTH - i*2, SCREEN_HEIGHT - i*2, ColorAlpha(SKYBLUE, 0.02f));
     }
 
-    // 5. Slow Drift BG: drifting faint gates
     for (int i = 0; i < 6; i++)
     {
         float px = fmodf(static_cast<float>(i * 412) + anim_time * 8.0f * (1.0f + (i % 2) * 0.5f), 900.0f) - 100.0f;
         float py = fmodf(static_cast<float>(i * 333) - anim_time * 5.0f * (1.0f + (i % 3) * 0.3f) + 900.0f, 900.0f) - 100.0f;
         t_Gate dummy; dummy.type = static_cast<GateType>(i % 7);
-        DrawGateShape(dummy, px, py, 100.0f, 100.0f * 1.732f * 0.75f, 0, 0.03f); // Very faint
+        DrawGateShape(dummy, px, py, 100.0f, 100.0f * 1.732f * 0.75f, 0, 0.03f);
     }
 
     Font font = GetGameFont();
+    Vector2 mp = GetMousePosition();
+    float cx = SCREEN_WIDTH / 2.0f;
 
     float header_pulse = 0.7f + 0.3f * sinf(anim_time * 2.0f);
     const char* title_text = "HOW TO PLAY";
     Vector2 title_size = MeasureTextEx(font, title_text, 40, 1);
-    DrawTextShadowed
-    (
-        font, 
-        title_text, 
-        (SCREEN_WIDTH - title_size.x) / 2.0f, 
-        25, 
-        40, 
-        ColorAlpha({0, 255, 255, 255}, header_pulse)
-    );
+    DrawTextShadowed(font, title_text, (SCREEN_WIDTH - title_size.x) / 2.0f, 25, 40,
+        ColorAlpha({0, 255, 255, 255}, header_pulse));
 
     const char* subtitle = "Your guide to building circuits with logic gates";
     Vector2 sub_size = MeasureTextEx(font, subtitle, 15.0f, 1.0f);
-    DrawTextShadowed
-    (
-        font, subtitle,
-        static_cast<int>((SCREEN_WIDTH - sub_size.x) / 2.0f),
-        78, 15,
-        ColorAlpha({136, 153, 187, 255}, 0.7f)
-    );
+    DrawTextShadowed(font, subtitle, (SCREEN_WIDTH - sub_size.x) / 2.0f, 78, 15,
+        ColorAlpha({136, 153, 187, 255}, 0.7f));
 
-    float line_y = 105.0f;
-    DrawLineEx
-    (
-        {60, line_y}, {660, line_y},
-        1.5f, ColorAlpha({0, 200, 255, 255}, 0.35f)
-    );
+    DrawLineEx({60, 105}, {660, 105}, 1.5f, ColorAlpha({0, 200, 255, 255}, 0.35f));
     int y = 120;
 
     const char* h1 = "THE GOAL";
     Vector2 h1_size = MeasureTextEx(font, h1, 22, 1);
     float h1_x = (SCREEN_WIDTH - h1_size.x) / 2.0f;
     DrawTextShadowed(font, h1, h1_x, y, 22, {0, 255, 255, 255});
-    
     DrawPoly({h1_x - 15.0f, y + 12.0f}, 6, 8.0f, 90.0f, ColorAlpha({0, 255, 255, 255}, 0.8f));
     DrawPolyLinesEx({h1_x - 15.0f, y + 12.0f}, 6, 8.0f, 90.0f, 2.0f, {0, 255, 255, 255});
     y += 32;
@@ -546,69 +527,159 @@ void DrawHowToPlay(float anim_time, float transition_time)
     const char* goal_txt = "Transform INPUT bits into the TARGET hex value using Logic Gates.";
     Vector2 goal_size = MeasureTextEx(font, goal_txt, 15, 1);
     DrawTextShadowed(font, goal_txt, (SCREEN_WIDTH - goal_size.x) / 2.0f, y, 15, {220, 230, 245, 255});
-    y += 40;
+    y += 38;
 
-    float cx = SCREEN_WIDTH / 2.0f, cy = y + 30;
+    const char* h_try = "TRY A GATE";
+    Vector2 h_try_sz = MeasureTextEx(font, h_try, 22, 1);
+    float h_try_x = (SCREEN_WIDTH - h_try_sz.x) / 2.0f;
+    DrawTextShadowed(font, h_try, h_try_x, y, 22, {0, 255, 255, 255});
+    DrawPoly({h_try_x - 15.0f, y + 12.0f}, 6, 8.0f, 90.0f, ColorAlpha({0, 255, 255, 255}, 0.8f));
+    DrawPolyLinesEx({h_try_x - 15.0f, y + 12.0f}, 6, 8.0f, 90.0f, 2.0f, {0, 255, 255, 255});
+    y += 34;
 
-    static int demo_in1 = 1;
-    static int demo_in2 = 1;
-    Rectangle r1 = {cx - 80, cy - 25, 30, 20};
-    Rectangle r2 = {cx - 80, cy + 5, 30, 20};
+    static int demo_in1 = 1, demo_in2 = 1, selected_gate = 0;
 
-    Vector2 mp = GetMousePosition();
+    float demo_cy = y + 38;
+    float in_x = cx - 210;
+    float gate_w = 65, gate_h = 65 * 1.732f * 0.75f;
+    float gate_x = cx - gate_w / 2.0f;
+    float gate_y = demo_cy - gate_h / 2.0f;
+    float out_x = cx + gate_w / 2.0f + 50;
+
+    GateType gt = static_cast<GateType>(selected_gate);
+    bool one_input = GetGateInputCount(gt) == 1;
+
+    Rectangle r1 = {in_x, demo_cy - 28, 44, 24};
+    Rectangle r2 = {in_x, demo_cy + 12, 44, 24};
     bool hov1 = CheckCollisionPointRec(mp, r1);
     bool hov2 = CheckCollisionPointRec(mp, r2);
 
-    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) 
+    if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
-        if (hov1) { demo_in1 ^= 1; } // Optional: play sound if we included audio.h
-        if (hov2) { demo_in2 ^= 1; }
+        if (hov1) demo_in1 ^= 1;
+        if (hov2 && !one_input) demo_in2 ^= 1;
     }
 
-    int demo_out = demo_in1 & demo_in2; // AND gate
-
-    // Input nodes
-    DrawRectangleRounded(r1, 0.5f, 4, demo_in1 ? Color{0, 255, 255, 100} : Color{100, 100, 100, 100});
-    if (hov1) DrawRectangleRoundedLines(r1, 0.5f, 4, WHITE);
-    DrawTextShadowed(font, demo_in1 ? "1" : "0", cx - 70, cy - 23, 16, WHITE);
-
-    DrawRectangleRounded(r2, 0.5f, 4, demo_in2 ? Color{0, 255, 255, 100} : Color{100, 100, 100, 100});
-    if (hov2) DrawRectangleRoundedLines(r2, 0.5f, 4, WHITE);
-    DrawTextShadowed(font, demo_in2 ? "1" : "0", cx - 70, cy + 7, 16, WHITE);
-
-    float wire_pulse1 = demo_in1 ? (sinf(anim_time * 8.0f) + 1.0f) * 0.5f : 0.2f;
-    float wire_pulse2 = demo_in2 ? (sinf(anim_time * 8.0f) + 1.0f) * 0.5f : 0.2f;
-    float wire_pulse_out = demo_out ? (sinf(anim_time * 8.0f) + 1.0f) * 0.5f : 0.2f;
-
-    DrawLineEx({cx - 50, cy - 15}, {cx - 20, cy - 15}, 3.0f, demo_in1 ? ColorAlpha(RED, wire_pulse1) : DARKGRAY);
-    DrawLineEx({cx - 50, cy + 15}, {cx - 20, cy + 15}, 3.0f, demo_in2 ? ColorAlpha(RED, wire_pulse2) : DARKGRAY);
-    DrawLineEx({cx + 20, cy}, {cx + 60, cy}, 3.0f, demo_out ? ColorAlpha(RED, wire_pulse_out) : DARKGRAY);
-
-    float flow = fmodf(anim_time * 1.5f, 1.0f);
-    if (demo_in1) DrawCircleV({cx - 50 + flow * 30.0f, cy - 15}, 2.0f, WHITE);
-    if (demo_in2) DrawCircleV({cx - 50 + flow * 30.0f, cy + 15}, 2.0f, WHITE);
-    if (demo_out) DrawCircleV({cx + 20 + flow * 40.0f, cy}, 2.0f, WHITE);
-
-    // Gate
-    t_Gate mock_gate; mock_gate.type = GateType::AND;
-    DrawGateShape(mock_gate, cx - 20, cy - 20 * 1.732f * 0.75f, 40, 40 * 1.732f * 0.75f, demo_out, 1.0f);
-
-    // Output
-    DrawRectangleRounded({cx + 60, cy - 15, 30, 30}, 0.5f, 4, demo_out ? Color{0, 255, 100, 150} : Color{100, 100, 100, 150});
-    DrawTextShadowed(font, demo_out ? "1" : "0", cx + 70, cy - 8, 20, WHITE);
-
-    if (demo_out)
+    int dout = 0;
+    switch (gt)
     {
-        DrawTextShadowed(font, "TARGET MET!", cx + 100, cy - 5, 16, {0, 255, 100, 255});
-    }
-    else
-    {
-        DrawTextShadowed(font, "Click inputs to solve ->", cx - 240, cy - 5, 12, {150, 150, 150, 200});
+        case GateType::AND:  dout = demo_in1 & demo_in2; break;
+        case GateType::OR:   dout = demo_in1 | demo_in2; break;
+        case GateType::NOT:  dout = !demo_in1; break;
+        case GateType::XOR:  dout = demo_in1 ^ demo_in2; break;
+        case GateType::NAND: dout = !(demo_in1 & demo_in2); break;
+        case GateType::NOR:  dout = !(demo_in1 | demo_in2); break;
+        case GateType::XNOR: dout = !(demo_in1 ^ demo_in2); break;
     }
 
-    y += 90;
+    DrawTextShadowed(font, "IN1", in_x, demo_cy - 46, 11, {180, 200, 220, 180});
+    DrawRectangleRounded(r1, 0.5f, 4, demo_in1 ? Color{0,255,255,120} : Color{100,100,100,120});
+    DrawRectangleRoundedLines(r1, 0.5f, 4, hov1 ? WHITE : ColorAlpha({0,255,255,255}, 0.4f));
+    DrawTextShadowed(font, demo_in1 ? "1" : "0", in_x + 16, demo_cy - 24, 18, WHITE);
 
-    // --- CONTROLS SECTION ---
+    if (!one_input)
+    {
+        DrawTextShadowed(font, "IN2", in_x, demo_cy + 42, 11, {180, 200, 220, 180});
+        DrawRectangleRounded(r2, 0.5f, 4, demo_in2 ? Color{0,255,255,120} : Color{100,100,100,120});
+        DrawRectangleRoundedLines(r2, 0.5f, 4, hov2 ? WHITE : ColorAlpha({0,255,255,255}, 0.4f));
+        DrawTextShadowed(font, demo_in2 ? "1" : "0", in_x + 16, demo_cy + 16, 18, WHITE);
+    }
+
+    t_Gate mg; mg.type = gt;
+    DrawGateShape(mg, gate_x, gate_y, gate_w, gate_h, dout, 1.0f);
+
+    DrawRectangleRounded({out_x, demo_cy - 14, 44, 28}, 0.5f, 4,
+        dout ? Color{0,255,100,150} : Color{80,80,80,150});
+    DrawRectangleRoundedLines({out_x, demo_cy - 14, 44, 28}, 0.5f, 4,
+        dout ? ColorAlpha({0,255,100,255}, 0.8f) : ColorAlpha({150,150,150,255}, 0.3f));
+    DrawTextShadowed(font, dout ? "1" : "0", out_x + 16, demo_cy - 10, 20, WHITE);
+    DrawTextShadowed(font, "OUT", out_x + 50, demo_cy - 5, 11, {180, 200, 220, 180});
+
+    float in1_wire_y = demo_cy - 16;
+    DrawLineEx({in_x + 44, in1_wire_y}, {gate_x, in1_wire_y}, 3.0f,
+        demo_in1 ? ColorAlpha({0,255,200,255}, 0.8f) : ColorAlpha(DARKGRAY, 0.5f));
+
+    if (!one_input)
+    {
+        float in2_wire_y = demo_cy + 24;
+        DrawLineEx({in_x + 44, in2_wire_y}, {gate_x, in2_wire_y}, 3.0f,
+            demo_in2 ? ColorAlpha({0,255,200,255}, 0.8f) : ColorAlpha(DARKGRAY, 0.5f));
+    }
+
+    DrawLineEx({gate_x + gate_w, demo_cy}, {out_x, demo_cy}, 3.0f,
+        dout ? ColorAlpha({0,255,200,255}, 0.8f) : ColorAlpha(DARKGRAY, 0.5f));
+
+    float fl = fmodf(anim_time * 2.0f, 1.0f);
+    if (demo_in1)
+    {
+        float px = in_x + 44 + fl * (gate_x - in_x - 44);
+        DrawCircleV({px, in1_wire_y}, 3.0f, ColorAlpha(WHITE, 0.9f));
+        DrawCircleV({px, in1_wire_y}, 5.0f, ColorAlpha({0,255,200,255}, 0.3f));
+    }
+    if (!one_input && demo_in2)
+    {
+        float px = in_x + 44 + fl * (gate_x - in_x - 44);
+        DrawCircleV({px, demo_cy + 24}, 3.0f, ColorAlpha(WHITE, 0.9f));
+        DrawCircleV({px, demo_cy + 24}, 5.0f, ColorAlpha({0,255,200,255}, 0.3f));
+    }
+    if (dout)
+    {
+        float px = gate_x + gate_w + fl * (out_x - gate_x - gate_w);
+        DrawCircleV({px, demo_cy}, 3.0f, ColorAlpha(WHITE, 0.9f));
+        DrawCircleV({px, demo_cy}, 5.0f, ColorAlpha({0,255,200,255}, 0.3f));
+    }
+
+    y = static_cast<int>(demo_cy + gate_h / 2.0f + 20);
+
+    DrawTextShadowed(font, "TRUTH TABLE", cx - 40, y, 13, {150, 170, 200, 200});
+    y += 18;
+
+    int num_inputs = GetGateInputCount(gt);
+    int combinations = 1 << num_inputs;
+    int cidx = num_inputs == 1 ? demo_in1 : (demo_in1 * 2 + demo_in2);
+
+    DrawTextShadowed(font, "IN", cx - 90, y, 11, {120, 140, 170, 200});
+    DrawTextShadowed(font, "OUT", cx + 20, y, 11, {120, 140, 170, 200});
+    DrawLineEx({cx - 90, static_cast<float>(y + 14)}, {cx + 55, static_cast<float>(y + 14)}, 1, ColorAlpha({100, 120, 160, 255}, 0.3f));
+    y += 18;
+
+    for (int r = 0; r < combinations; r++)
+    {
+        int a = (r >> 1) & 1, b = r & 1;
+        int ov = 0;
+        switch (gt)
+        {
+            case GateType::AND:  ov = a & b; break;
+            case GateType::OR:   ov = a | b; break;
+            case GateType::NOT:  ov = !a; break;
+            case GateType::XOR:  ov = a ^ b; break;
+            case GateType::NAND: ov = !(a & b); break;
+            case GateType::NOR:  ov = !(a | b); break;
+            case GateType::XNOR: ov = !(a ^ b); break;
+        }
+        bool cur = (r == cidx);
+        Color rc = cur ? Color{0,255,255,255} : Color{170,185,210,180};
+        char rb[32];
+        if (num_inputs == 1)
+            snprintf(rb, sizeof(rb), "%d", a);
+        else
+            snprintf(rb, sizeof(rb), "%d  %d", a, b);
+        DrawTextShadowed(font, rb, cx - 85, y, 12, rc);
+
+        char ov_buf[8];
+        snprintf(ov_buf, sizeof(ov_buf), "%d", ov);
+        Color ov_color = cur ? Color{0,255,255,255} : (ov ? Color{0,255,100,180} : Color{170,185,210,120});
+        DrawTextShadowed(font, ov_buf, cx + 30, y, 12, ov_color);
+
+        if (cur)
+        {
+            DrawCircleV({cx - 98, static_cast<float>(y + 6)}, 3.0f, {0, 255, 255, 255});
+            DrawRectangleRounded({cx - 102, static_cast<float>(y - 1), 100, 14}, 0.5f, 2, ColorAlpha({0,255,255,255}, 0.05f));
+        }
+        y += 16;
+    }
+    y += 14;
+
     const char* h2 = "CONTROLS";
     Vector2 h2_size = MeasureTextEx(font, h2, 22, 1);
     float h2_x = (SCREEN_WIDTH - h2_size.x) / 2.0f;
@@ -617,113 +688,118 @@ void DrawHowToPlay(float anim_time, float transition_time)
     DrawPolyLinesEx({h2_x - 15.0f, y + 12.0f}, 6, 8.0f, 90.0f, 2.0f, {0, 255, 150, 255});
     y += 32;
 
-    int col1 = cx - 180, col2 = cx + 50;
+    int col1 = static_cast<int>(cx) - 180;
+    int col2 = static_cast<int>(cx) + 50;
 
-    // Left click
-    DrawRectangleRounded({static_cast<float>(col1), static_cast<float>(y), 24, 30}, 0.5f, 4, {100, 150, 200, 50});
-    DrawRectangleRounded({static_cast<float>(col1), static_cast<float>(y), 11, 14}, 0.5f, 4, {0, 255, 200, 200}); // L-click highlight
-    DrawTextShadowed(font, "LEFT CLICK", col1 + 35, y + 8, 14, {0, 255, 200, 255});
-    DrawTextShadowed(font, "Place / Wire / Toggle", col1 + 35, y + 22, 12, {200, 215, 235, 180});
+    DrawRectangleRounded({static_cast<float>(col1), static_cast<float>(y), 24, 26}, 0.5f, 4, {100, 150, 200, 50});
+    DrawRectangleRounded({static_cast<float>(col1), static_cast<float>(y), 11, 13}, 0.5f, 4, {0, 255, 200, 200});
+    DrawTextShadowed(font, "LEFT CLICK", col1 + 35, y + 6, 13, {0, 255, 200, 255});
+    DrawTextShadowed(font, "Place / Wire / Toggle", col1 + 35, y + 18, 11, {200, 215, 235, 150});
 
-    // Right click
-    DrawRectangleRounded({static_cast<float>(col2), static_cast<float>(y), 24, 30}, 0.5f, 4, {100, 150, 200, 50});
-    DrawRectangleRounded({static_cast<float>(col2 + 13), static_cast<float>(y), 11, 14}, 0.5f, 4, {255, 100, 100, 200}); // R-click highlight
-    DrawTextShadowed(font, "RIGHT CLICK", col2 + 35, y + 8, 14, {255, 100, 100, 255});
-    DrawTextShadowed(font, "Delete Gate", col2 + 35, y + 22, 12, {200, 215, 235, 180});
+    DrawRectangleRounded({static_cast<float>(col2), static_cast<float>(y), 24, 26}, 0.5f, 4, {100, 150, 200, 50});
+    DrawRectangleRounded({static_cast<float>(col2 + 13), static_cast<float>(y), 11, 13}, 0.5f, 4, {255, 100, 100, 200});
+    DrawTextShadowed(font, "RIGHT CLICK", col2 + 35, y + 6, 13, {255, 100, 100, 255});
+    DrawTextShadowed(font, "Delete Gate", col2 + 35, y + 18, 11, {200, 215, 235, 150});
+    y += 38;
 
-    y += 45;
-
-    // Drag / Keys
     DrawRectangleRounded({static_cast<float>(col1), static_cast<float>(y), 24, 20}, 0.2f, 4, {200, 150, 50, 150});
-    DrawTextShadowed(font, "DRAG", col1 + 35, y + 4, 14, {255, 200, 50, 255});
-    DrawTextShadowed(font, "Move Gate", col1 + 35, y + 18, 12, {200, 215, 235, 180});
+    DrawTextShadowed(font, "DRAG", col1 + 35, y + 4, 13, {255, 200, 50, 255});
+    DrawTextShadowed(font, "Move Gate", col1 + 35, y + 16, 11, {200, 215, 235, 150});
 
     DrawRectangleRounded({static_cast<float>(col2), static_cast<float>(y), 24, 20}, 0.2f, 4, {200, 150, 255, 150});
-    DrawTextShadowed(font, "KEYS 1-4", col2 + 35, y + 4, 14, {200, 150, 255, 255});
-    DrawTextShadowed(font, "Quick Toggle Input Bits", col2 + 35, y + 18, 12, {200, 215, 235, 180});
+    DrawTextShadowed(font, "KEYS 1-4", col2 + 35, y + 4, 13, {200, 150, 255, 255});
+    DrawTextShadowed(font, "Quick Toggle Input Bits", col2 + 35, y + 16, 11, {200, 215, 235, 150});
+    y += 42;
 
-    y += 55;
-
-    // --- GATE CHEAT SHEET ---
     const char* h3 = "GATES";
     Vector2 h3_size = MeasureTextEx(font, h3, 22, 1);
     float h3_x = (SCREEN_WIDTH - h3_size.x) / 2.0f;
     DrawTextShadowed(font, h3, h3_x, y, 22, {255, 100, 200, 255});
     DrawPoly({h3_x - 15.0f, y + 12.0f}, 6, 8.0f, 90.0f, ColorAlpha({255, 100, 200, 255}, 0.8f));
     DrawPolyLinesEx({h3_x - 15.0f, y + 12.0f}, 6, 8.0f, 90.0f, 2.0f, {255, 100, 200, 255});
-    y += 32;
+    y += 8;
 
-    const char* gate_desc[] =
+    const char* gate_tips[] =
     {
-        "Both = 1", "Either = 1", "Flip bit", "Differ = 1",
-        "NOT AND", "NOT OR", "Same = 1"
+        "Both inputs = 1", "Either input = 1", "Flips the input bit", "Inputs differ",
+        "NOT both = 1", "Neither = 1", "Inputs match"
     };
 
-    float spacing = 85;
-    float start_x = cx - (3.0f * spacing);
-    int hovered_gate = -1;
+    float gate_spacing = 85.0f;
+    float gsx = cx - (3.0f * gate_spacing);
+    int hovered_gate_idx = -1;
+    float gate_row_y = static_cast<float>(y) + 10.0f;
+    float gate_shape_w = 50.0f;
+    float gate_shape_h = 50.0f * 1.732f * 0.75f;
 
     for (int i = 0; i < 7; i++)
     {
         t_Gate dg; dg.type = static_cast<GateType>(i);
-        float gx = start_x + i * spacing;
-        Rectangle g_rect = {gx - 25, static_cast<float>(y), 50, 50 * 1.732f * 0.75f};
+        float gx = gsx + i * gate_spacing;
+        Rectangle g_rect = {gx - 28, gate_row_y - 2, 56, gate_shape_h + 4};
         bool is_hov = CheckCollisionPointRec(mp, g_rect);
-        if (is_hov) hovered_gate = i;
+        bool is_sel = (i == selected_gate);
+        if (is_hov) hovered_gate_idx = i;
 
-        float scale = is_hov ? 1.2f : 1.0f;
-        float gw = 50 * scale;
-        float gh = 50 * 1.732f * 0.75f * scale;
-        DrawGateShape(dg, gx - gw/2, y + (50 * 1.732f * 0.75f - gh)/2, gw, gh, is_hov ? 1 : 0, is_hov ? 1.0f : 0.8f);
+        if (is_hov && IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
+            selected_gate = i;
 
-        Vector2 text_size = MeasureTextEx(font, gate_desc[i], 11, 1);
-        DrawTextShadowed(font, gate_desc[i], static_cast<int>(gx - text_size.x/2), y + 45, 11, {200, 215, 235, 180});
+        float scale = is_sel ? 1.15f : (is_hov ? 1.08f : 1.0f);
+        float sw = gate_shape_w * scale;
+        float sh = gate_shape_h * scale;
+        float sx = gx - sw / 2.0f;
+        float sy = gate_row_y + (gate_shape_h - sh) / 2.0f;
+
+        if (is_sel)
+        {
+            DrawRectangleRounded({gx - 30, gate_row_y - 4, 60, gate_shape_h + 8}, 0.3f, 4,
+                ColorAlpha({0, 255, 255, 255}, 0.08f));
+            DrawRectangleRoundedLines({gx - 30, gate_row_y - 4, 60, gate_shape_h + 8}, 0.3f, 4,
+                ColorAlpha({0, 255, 255, 255}, 0.5f));
+        }
+
+        DrawGateShape(dg, sx, sy, sw, sh, is_sel ? 1 : 0,
+            is_sel ? 1.0f : (is_hov ? 0.9f : 0.7f));
+
+        const char* gname = GateTypeToString(dg.type);
+        Vector2 name_sz = MeasureTextEx(font, gname, 11, 1);
+        Color name_color = is_sel ? Color{0, 255, 255, 255} : Color{180, 200, 220, 180};
+        DrawTextShadowed(font, gname, gx - name_sz.x / 2.0f, gate_row_y + gate_shape_h + 4, 11, name_color);
     }
 
-    if (hovered_gate != -1)
+    y = static_cast<int>(gate_row_y + gate_shape_h + 24);
+
+    if (hovered_gate_idx != -1)
     {
-        float hx = start_x + hovered_gate * spacing;
-        float hy = y + 80.0f;
-        const char* tip = "LOGIC CORE";
-        if (hovered_gate == 0) tip = "Out=1 if IN1=1 and IN2=1";
-        if (hovered_gate == 1) tip = "Out=1 if IN1=1 or IN2=1";
-        if (hovered_gate == 2) tip = "Out flips the IN bit";
-        if (hovered_gate == 3) tip = "Out=1 if inputs differ";
-        if (hovered_gate == 4) tip = "Out=0 if IN1=1 and IN2=1";
-        if (hovered_gate == 5) tip = "Out=0 if IN1=1 or IN2=1";
-        if (hovered_gate == 6) tip = "Out=1 if inputs match";
-
-        Vector2 tip_s = MeasureTextEx(font, tip, 15, 1);
-        DrawRectangleRounded({hx - tip_s.x/2 - 15.0f, hy - 18.0f, tip_s.x + 30.0f, 36.0f}, 0.5f, 4, ColorAlpha(BLACK, 0.9f));
-        DrawRectangleRoundedLines({hx - tip_s.x/2 - 15.0f, hy - 18.0f, tip_s.x + 30.0f, 36.0f}, 0.5f, 4, {255, 100, 200, 255});
-        DrawTextShadowed(font, tip, static_cast<int>(hx - tip_s.x/2), static_cast<int>(hy - 8), 15, WHITE);
+        float hx = gsx + hovered_gate_idx * gate_spacing;
+        const char* tip = gate_tips[hovered_gate_idx];
+        Vector2 tip_s = MeasureTextEx(font, tip, 14, 1);
+        float tip_y = static_cast<float>(y) + 2.0f;
+        DrawRectangleRounded({hx - tip_s.x / 2.0f - 14, tip_y - 2, tip_s.x + 28, 24}, 0.5f, 4,
+            ColorAlpha(BLACK, 0.9f));
+        DrawRectangleRoundedLines({hx - tip_s.x / 2.0f - 14, tip_y - 2, tip_s.x + 28, 24}, 0.5f, 4,
+            {255, 100, 200, 255});
+        DrawTextShadowed(font, tip, hx - tip_s.x / 2.0f, tip_y + 2, 14, WHITE);
+        y += 30;
     }
-
-    y += 14;
 
     float btn_w = 280.0f;
     float btn_h = 44.0f;
     float btn_x = (SCREEN_WIDTH - btn_w) / 2.0f;
     Rectangle back_btn = {btn_x, 660, btn_w, btn_h};
-
     bool back_hovered = CheckCollisionPointRec(GetMousePosition(), back_btn);
     DrawHexButton(back_btn, "BACK TO TITLE  [ESC]", back_hovered, anim_time, {0, 150, 255, 255});
 
     float play_alpha = 0.3f + 0.2f * sinf(anim_time * 1.5f);
     const char* jump_txt = "ENTER or SPACE to jump straight into the game!";
     Vector2 jump_size = MeasureTextEx(font, jump_txt, 11, 1);
-    DrawTextShadowed
-    (
-        font, jump_txt,
-        (SCREEN_WIDTH - jump_size.x) / 2.0f, 650, 11,
-        ColorAlpha({150, 180, 220, 255}, play_alpha)
-    );
+    DrawTextShadowed(font, jump_txt, (SCREEN_WIDTH - jump_size.x) / 2.0f, 652, 11,
+        ColorAlpha({150, 180, 220, 255}, play_alpha));
 
     if (transition_time > 0.0f)
     {
         float t = transition_time / 0.8f;
         if (t > 1.0f) t = 1.0f;
-
         float max_radius = 1200.0f;
         float radius = t * max_radius;
         for (int i = 0; i < 40; i++)
