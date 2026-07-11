@@ -76,7 +76,13 @@ void DrawGrid
 {
     Color fill_even = {10, 14, 28, 255};
     Color fill_odd = {8, 11, 22, 255};
-    Color outline = {30, 48, 80, 255};
+    float breathe = 0.5f + 0.5f * sinf(anim_time * 2.0f);
+    Color outline = {
+        static_cast<unsigned char>(30 + 10 * breathe), 
+        static_cast<unsigned char>(48 + 20 * breathe), 
+        static_cast<unsigned char>(80 + 30 * breathe), 
+        255
+    };
     Color dot_color = {40, 60, 100, 255};
 
     for (int row = 0; row < GRID_ROWS; row++)
@@ -86,8 +92,18 @@ void DrawGrid
             Vector2 c = GetHexCenter(row, col);
             Color fill = (row + col) % 2 == 0 ? fill_even : fill_odd;
             DrawFilledHexagon(c, HEX_SIZE - 1, fill);
-            DrawHexOutline(c, HEX_SIZE, 1.5f, outline);
-            DrawCircleV(c, 1.5f, dot_color);
+            
+            float grid_pulse = 0.0f;
+            float dist = c.x + c.y; // simple distance field
+            if (fmodf(anim_time * 60.0f + dist, 400.0f) < 15.0f) grid_pulse = 1.0f;
+            
+            Color out_col = outline;
+            if (grid_pulse > 0.0f) {
+                out_col = {0, 150, 255, 100};
+            }
+            
+            DrawHexOutline(c, HEX_SIZE, 1.5f, out_col);
+            DrawCircleV(c, 1.5f, grid_pulse > 0.0f ? Color{0, 255, 255, 150} : dot_color);
         }
     }
 

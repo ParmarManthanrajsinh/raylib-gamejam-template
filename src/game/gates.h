@@ -57,7 +57,9 @@ struct t_Pin
 // Gate pin queries
 int GetGateInputCount(GateType type);
 Vector2 GetGateInputPinPos(const t_Gate& gate, int pin_index);
+Vector2 GetGateInputPinPos(GateType type, Vector2 center, int pin_index);
 Vector2 GetGateOutputPinPos(const t_Gate& gate);
+Vector2 GetGateOutputPinPos(Vector2 center);
 
 // Input node pins
 Vector2 GetInputNodeOutputPin(int index);

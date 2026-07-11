@@ -39,23 +39,33 @@ Vector2 GetOutputNodeInputPin(int bit_index)
     return {OUTPUT_PIN_X, base_y + bit_index * spacing};
 }
 
+Vector2 GetGateInputPinPos(GateType type, Vector2 center, int pin_index)
+{
+    float pin_x = center.x - HEX_SIZE * SQRT3 / 2;
+    int input_count = GetGateInputCount(type);
+    if (input_count == 1) return {pin_x + 4, center.y};
+
+    float spacing = HEX_SIZE * SQRT3 * 0.55f;
+    float start_y = center.y - spacing / 2;
+    float frac = (pin_index + 0.5f) / input_count;
+    return {pin_x + 4, start_y + frac * spacing};
+}
+
 Vector2 GetGateInputPinPos(const t_Gate& gate, int pin_index)
 {
     Vector2 c = GetHexCenter(gate.row, gate.col);
-    float pin_x = c.x - HEX_SIZE * SQRT3 / 2;
-    int input_count = GetGateInputCount(gate.type);
-    if (input_count == 1) return {pin_x + 4, c.y};
+    return GetGateInputPinPos(gate.type, c, pin_index);
+}
 
-    float spacing = HEX_SIZE * SQRT3 * 0.55f;
-    float start_y = c.y - spacing / 2;
-    float frac = (pin_index + 0.5f) / input_count;
-    return {pin_x + 4, start_y + frac * spacing};
+Vector2 GetGateOutputPinPos(Vector2 center)
+{
+    return {center.x + HEX_SIZE * SQRT3 / 2 - 4, center.y};
 }
 
 Vector2 GetGateOutputPinPos(const t_Gate& gate)
 {
     Vector2 c = GetHexCenter(gate.row, gate.col);
-    return {c.x + HEX_SIZE * SQRT3 / 2 - 4, c.y};
+    return GetGateOutputPinPos(c);
 }
 
 namespace

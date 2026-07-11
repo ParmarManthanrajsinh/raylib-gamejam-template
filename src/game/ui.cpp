@@ -85,24 +85,35 @@ void DrawBackground()
 void DrawInfoBar(int target_hex, int current_hex, bool solved, float anim_time)
 {
     Font font = GetGameFont();
+    float panel_w = 400.0f;
+    float panel_h = 44.0f;
+    float panel_x = (SCREEN_WIDTH - panel_w) / 2.0f;
+    float panel_y = 12.0f;
+    
+    // Tech panel
+    DrawRectangleRounded({panel_x, panel_y, panel_w, panel_h}, 0.5f, 4, {10, 14, 28, 220});
+    
+    Color border_color = solved ? ColorAlpha({0, 255, 136, 255}, 0.8f + 0.2f * sinf(anim_time * 10.0f)) : Color{0, 150, 255, 150};
+    DrawRectangleRoundedLines({panel_x, panel_y, panel_w, panel_h}, 0.5f, 4, border_color);
+    
+    // Glitch / Shake if solved
+    float rx = solved ? GetRandomValue(-1, 1) : 0;
+    float ry = solved ? GetRandomValue(-1, 1) : 0;
+    
     char target_text[32];
-    snprintf(target_text, sizeof(target_text), "Target: 0x%X", target_hex);
-    DrawTextShadowed(font, target_text, 20, 10, 18, {136, 153, 187, 255});
+    snprintf(target_text, sizeof(target_text), "TARGET: 0x%X", target_hex);
+    DrawTextShadowed(font, target_text, static_cast<int>(panel_x + 30 + rx), static_cast<int>(panel_y + 14 + ry), 16, {136, 153, 187, 255});
 
     char output_text[32];
-    snprintf(output_text, sizeof(output_text), "Output: 0x%X", current_hex);
+    snprintf(output_text, sizeof(output_text), "OUT: 0x%X", current_hex);
     Color output_color = solved ? Color{0, 255, 136, 255} : WHITE;
-    DrawTextShadowed(font, output_text, 280, 10, 18, output_color);
+    DrawTextShadowed(font, output_text, static_cast<int>(panel_x + 220 + rx), static_cast<int>(panel_y + 14 + ry), 16, output_color);
 
     if (solved)
     {
-        float pulse = 0.7f + 0.3f * sinf(anim_time * 4);
-        Color solved_color = 
-        {
-            0, 255, 136,
-            static_cast<unsigned char>(255 * pulse)
-        };
-        DrawTextShadowed(font, "SOLVED!", 600, 10, 18, solved_color);
+        float pulse = 0.7f + 0.3f * sinf(anim_time * 8);
+        Color solved_color = {0, 255, 136, static_cast<unsigned char>(255 * pulse)};
+        DrawTextShadowed(font, "MATCH!", static_cast<int>(panel_x + panel_w + 20), static_cast<int>(panel_y + 14), 16, solved_color);
     }
 }
 
@@ -184,21 +195,24 @@ void DrawInputNodes(int input_bits[4], const t_Pin* hovered_pin, float anim_time
                            hovered_pin->source_id == i &&
                            !hovered_pin->is_input;
 
-        // Node body
-        DrawNodeBody(INPUT_X, y, 16, active, false, anim_time);
+        // Battery body
+        Rectangle batt_rect = {INPUT_X - 22, y - 14, 34, 28};
+        DrawRectangleRounded(batt_rect, 0.3f, 4, {10, 14, 28, 255});
+        
+        Color glow = active ? ColorAlpha({0, 255, 255, 255}, 0.8f + 0.2f * sinf(anim_time * 5.0f)) : ColorAlpha({0, 100, 150, 255}, 0.3f);
+        DrawRectangleRoundedLines(batt_rect, 0.3f, 4, glow);
+        
+        if (active) {
+            DrawRectangleRounded({batt_rect.x + 4, batt_rect.y + 4, batt_rect.width - 8, batt_rect.height - 8}, 0.2f, 4, ColorAlpha(glow, 0.6f));
+        }
+        
+        // Battery tip
+        DrawRectangle(static_cast<int>(INPUT_X + 12), static_cast<int>(y - 6), 6, 12, glow);
 
         // Label
         char label[8];
         snprintf(label, sizeof(label), "IN%d", i);
-        DrawTextShadowed
-        (
-            GetGameFont(), 
-            label,
-            static_cast<int>(INPUT_X - 12),
-            static_cast<int>(y - 7),
-            12,
-            WHITE
-        );
+        DrawTextShadowed(GetGameFont(), label, static_cast<int>(INPUT_X - 52), static_cast<int>(y - 7), 12, {200, 215, 235, 255});
 
         // Output pin
         Vector2 pin_pos = GetInputNodeOutputPin(i);
@@ -215,68 +229,46 @@ void DrawOutputNode(int output_bits[4], int target_hex, const t_Pin* hovered_pin
     float pulse = match ? 0.7f + 0.3f * sinf(anim_time * 5.0f) : 1.0f;
 
     // Body glow
-    Color glow_col = match ? ColorAlpha({0, 255, 136, 255}, 0.5f * pulse)
-                           : ColorAlpha({0, 150, 255, 255}, 0.2f);
-    for (int r = 70; r > 20; r -= 10)
+    Color glow_col = match ? ColorAlpha({0, 255, 136, 255}, 0.6f * pulse)
+                           : ColorAlpha({0, 150, 255, 255}, 0.3f);
+    for (int r = 80; r > 20; r -= 10)
     {
         Color c = glow_col;
-        c.a = static_cast<unsigned char>(float(c.a) * (1.0f - static_cast<float>(r - 20) / 50.0f));
+        c.a = static_cast<unsigned char>(float(c.a) * (1.0f - static_cast<float>(r - 20) / 60.0f));
         DrawCircleV({cx, cy}, static_cast<float>(r), c);
     }
 
-    // Body
-    DrawRectangleRounded({cx - 45, cy - 65, 90, 130}, 0.2f, 10, {10, 14, 28, 255});
+    // Server Mainframe Body
+    Rectangle main_rect = {cx - 55, cy - 75, 110, 150};
+    DrawRectangleRounded(main_rect, 0.1f, 4, {10, 12, 24, 255});
     Color border = match ? Color{0, 255, 136, 255} : Color{0, 150, 255, 255};
-    DrawRectangleRoundedLines({cx - 45, cy - 65, 90, 130}, 0.2f, 10, border);
-    DrawRectangleRoundedLines({cx - 43, cy - 63, 86, 126}, 0.2f, 10, ColorAlpha(border, 0.3f));
+    DrawRectangleRoundedLines(main_rect, 0.1f, 4, border);
+    DrawRectangleRoundedLines({main_rect.x + 3, main_rect.y + 3, main_rect.width - 6, main_rect.height - 6}, 0.1f, 4, ColorAlpha(border, 0.4f));
 
     Font font = GetGameFont();
-    DrawTextShadowed
-    (
-        font, 
-        "OUT", 
-        static_cast<int>(cx - 16), 
-        static_cast<int>(cy - 55), 
-        16, 
-        {100, 200, 255, 255}
-    );
+    DrawTextShadowed(font, "OUTPUT CORE", static_cast<int>(cx - 45), static_cast<int>(cy - 65), 11, {100, 200, 255, 200});
 
     char hex_text[16];
     snprintf(hex_text, sizeof(hex_text), "0x%X", val);
     Color hex_color = match ? Color{0, 255, 136, 255} : WHITE;
-    DrawTextShadowed
-    (
-        font, 
-        hex_text, 
-        static_cast<int>(cx - 36), 
-        static_cast<int>(cy - 20), 
-        30, 
-        hex_color
-    );
+    DrawTextShadowed(font, hex_text, static_cast<int>(cx - 36), static_cast<int>(cy - 30), 32, hex_color);
 
-    // Bit indicators
+    // Bit indicators (Neon glow)
     for (int b = 0; b < 4; b++)
     {
-        float bx = cx - 24 + b * 16;
-        float by = cy + 40;
-        Color bit_color =
-            output_bits[b] ? Color{0, 255, 255, 255} : Color{20, 60, 100, 255};
-        Color bit_border =
-            output_bits[b] ? Color{255, 255, 255, 255} : Color{40, 100, 160, 255};
-        DrawCircleV({bx, by}, 5, bit_color);
-        DrawCircleV({bx, by}, 5, bit_border);
+        float bx = cx - 30 + b * 20;
+        float by = cy + 45;
+        Color bit_color = output_bits[b] ? Color{0, 255, 255, 255} : Color{20, 40, 60, 255};
+        if (output_bits[b]) {
+            DrawCircleV({bx, by}, 8, ColorAlpha(bit_color, 0.4f)); // Glow
+            DrawCircleV({bx, by}, 4, WHITE);
+        } else {
+            DrawCircleV({bx, by}, 4, bit_color);
+        }
 
         char bit_label[4];
         snprintf(bit_label, sizeof(bit_label), "b%d", b);
-        DrawTextShadowed
-        (
-            GetGameFont(), 
-            bit_label, 
-            static_cast<int>(bx - 6), 
-            static_cast<int>(by + 10),
-            10, 
-            {102, 119, 153, 255}
-        );
+        DrawTextShadowed(font, bit_label, static_cast<int>(bx - 6), static_cast<int>(by + 12), 10, {102, 119, 153, 255});
     }
 
     // Input pins
@@ -382,6 +374,19 @@ void DrawPalette(int selected_index)
         if (is_selected || is_hovered)
         {
             DrawRectangleRounded({r.x-2, r.y-2, r.width+4, r.height+4}, 0.2f, 6, ColorAlpha(border, 0.4f));
+            
+            // Animated circuit border from menu
+            float anim_time = GetTime();
+            float border_anim = fmodf(anim_time * 200.0f, r.width + r.height);
+            Color anim_col = {0, 255, 255, 255};
+            if (border_anim < r.width) {
+                DrawLineEx({r.x + border_anim, r.y}, {r.x + border_anim + 15, r.y}, 3.0f, anim_col);
+                DrawLineEx({r.x + r.width - border_anim, r.y + r.height}, {r.x + r.width - border_anim - 15, r.y + r.height}, 3.0f, anim_col);
+            } else {
+                float h_anim = border_anim - r.width;
+                DrawLineEx({r.x + r.width, r.y + h_anim}, {r.x + r.width, r.y + h_anim + 15}, 3.0f, anim_col);
+                DrawLineEx({r.x, r.y + r.height - h_anim}, {r.x, r.y + r.height - h_anim - 15}, 3.0f, anim_col);
+            }
         }
 
         DrawRectangleRounded(r, 0.2f, 6, bg);

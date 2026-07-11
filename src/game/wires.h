@@ -27,6 +27,8 @@ void DrawAllWires
     const std::vector<t_Gate>& gates,
     const int input_bits[4],
     const std::unordered_map<int, int>& gate_outputs,
-    float anim_time
+    float anim_time,
+    int dragging_gate_id = -1,
+    Vector2 drag_pos = {-1000, -1000}
 );
 void DrawGhostWire(Vector2 from, Vector2 mouse_pos);

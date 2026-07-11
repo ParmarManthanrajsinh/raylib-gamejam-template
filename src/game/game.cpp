@@ -635,7 +635,19 @@ void Game::Draw()
         FindGateAt(hovered_cell.row, hovered_cell.col) != nullptr;
     DrawGrid(hovered_cell, has_selection, cell_occupied, anim_time);
 
-    DrawAllWires(wires, gates, input_bits, gate_outputs, anim_time);
+    Vector2 drag_pos = {-1000, -1000};
+    if (dragging_gate_id != -1)
+    {
+        drag_pos = mouse_pos;
+        if (hovered_cell.IsValid() && (!FindGateAt(hovered_cell.row, hovered_cell.col) || FindGateAt(hovered_cell.row, hovered_cell.col)->id == dragging_gate_id))
+        {
+            Vector2 c = GetHexCenter(hovered_cell.row, hovered_cell.col);
+            drag_pos.x = c.x * 0.5f + mouse_pos.x * 0.5f;
+            drag_pos.y = c.y * 0.5f + mouse_pos.y * 0.5f;
+        }
+    }
+
+    DrawAllWires(wires, gates, input_bits, gate_outputs, anim_time, dragging_gate_id, drag_pos);
 
     if (wire_drag_state.IsActive())
     {
@@ -734,16 +746,18 @@ void Game::Draw()
         {
             float gw = HEX_SIZE * 1.3f;
             float gh = HEX_SIZE * SQRT3 * 0.75f;
-            // Snap to valid cell if hovering
-            Vector2 gp = mouse_pos;
+            
             if (hovered_cell.IsValid() && (!FindGateAt(hovered_cell.row, hovered_cell.col) || FindGateAt(hovered_cell.row, hovered_cell.col)->id == dragging_gate_id))
             {
-                gp = GetHexCenter(hovered_cell.row, hovered_cell.col);
-                gp.x = gp.x * 0.5f + mouse_pos.x * 0.5f; // Slight magnetic pull
-                gp.y = gp.y * 0.5f + mouse_pos.y * 0.5f;
+                Vector2 c = GetHexCenter(hovered_cell.row, hovered_cell.col);
+                float pulse = 0.6f + 0.4f * sinf(anim_time * 4);
+                DrawFilledHexagon(c, HEX_SIZE + 4, ColorAlpha(SKYBLUE, 0.06f * pulse));
+                DrawFilledHexagon(c, HEX_SIZE - 2, ColorAlpha(SKYBLUE, 0.2f * pulse));
+                DrawHexOutline(c, HEX_SIZE - 1, 3.0f, ColorAlpha(SKYBLUE, 0.8f * pulse));
             }
+
             int out_val = gate_outputs.count(g->id) ? gate_outputs.at(g->id) : 0;
-            DrawGateShape(*g, gp.x - gw / 2, gp.y - gh / 2, gw, gh, out_val, 0.8f);
+            DrawGateShape(*g, drag_pos.x - gw / 2, drag_pos.y - gh / 2, gw, gh, out_val);
         }
     }
 
