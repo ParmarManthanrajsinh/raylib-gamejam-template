@@ -362,11 +362,6 @@ GameState UpdateTitleScreen(float)
     {
         return GameState::TITLE_TO_PLAY_TRANSITION;
     }
-    if (IsKeyPressed(KEY_H))
-    {
-        return GameState::HOW_TO_PLAY;
-    }
-
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         Vector2 mpos = GetMousePosition();
@@ -464,7 +459,7 @@ void DrawTitleScreen(float anim_time, float transition_time)
     DrawHexButton
     (
         {howto_btn.x, howto_btn.y, howto_btn.width, howto_btn.height},
-        "HOW TO PLAY  [H]",
+        "HOW TO PLAY",
         howto_hovered, anim_time, {0, 150, 255, 255}
     );
 

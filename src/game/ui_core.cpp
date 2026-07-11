@@ -47,12 +47,12 @@ void DrawMenuButton(float anim_time)
     DrawRectangleRounded(r, 0.3f, 6, bg);
     DrawRectangleRoundedLines(r, 0.3f, 6, border);
 
-    Vector2 text_size = MeasureTextEx(font, "MENU", 14.0f, 1.0f);
+    Vector2 text_size = MeasureTextEx(font, "MENU [M]", 14.0f, 1.0f);
     float tx = r.x + (r.width - text_size.x) / 2.0f;
     float ty = r.y + (r.height - text_size.y) / 2.0f;
     DrawTextShadowed
     (
-        font, "MENU", static_cast<int>(tx), static_cast<int>(ty), 14,
+        font, "MENU [M]", static_cast<int>(tx), static_cast<int>(ty), 14,
         hovered ? WHITE : Color{ 150, 180, 220, 255 }
     );
 }

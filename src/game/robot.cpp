@@ -396,10 +396,15 @@ static std::string GetRandomDialog(const std::array<const char*, N>& list)
 void Robot::Speak(const std::string& text, int priority, RobotMood mood, float duration) 
 {
     if (priority <= bot.dialog_priority && bot.dialog_timer > 0) return;
+    if (duration <= 0.0f)
+    {
+        duration = text.length() * 0.03f + 1.0f;
+    }
     bot.current_dialog = text;
     bot.type_timer = 0.0f;
     bot.dialog_timer = duration;
     bot.dialog_duration = duration;
+    bot.dialog_elapsed = 0.0f;
     bot.dialog_priority = priority;
     bot.current_mood = mood;
     bot.type_cursor = 0;
@@ -448,16 +453,20 @@ void Robot::UpdateAnimation(float dt, Vector2 mouse_pos)
     // Typewriter logic
     if (bot.dialog_timer > 0)
     {
-        bot.dialog_timer -= dt;
+        bot.dialog_elapsed += dt;
         if (bot.type_cursor < static_cast<int>(bot.current_dialog.length()))
         {
             bot.type_timer += dt;
-            if (bot.type_timer > 0.09f)
+            if (bot.type_timer > 0.03f)
             {
                 bot.type_timer = 0.0f;
                 bot.type_cursor++;
                 if (bot.type_cursor % 2 == 0) PlaySfx(SfxType::ROBOT_TALK);
             }
+        }
+        else
+        {
+            bot.dialog_timer -= dt;
         }
     } 
     else 
@@ -513,7 +522,8 @@ void Robot::Update
     {
         if (bot.proximity_cooldown <= 0.0f)
         {
-            bot.proximity_cooldown = 3.0f;
+            bot.proximity_cooldown = 1.5f;
+            PlaySfx(SfxType::ROBOT_BOOP);
             Speak(GetRandomDialog(diag_close_zone), 2, RobotMood::ANGRY);
         }
     }
@@ -538,7 +548,8 @@ void Robot::Update
     {
         if (bot.proximity_cooldown <= 0.0f)
         {
-            bot.proximity_cooldown = 3.0f;
+            bot.proximity_cooldown = 1.5f;
+            PlaySfx(SfxType::ROBOT_BOOP);
             Speak(GetRandomDialog(diag_near_zone), 1, RobotMood::SASSY);
         }
     }
@@ -757,7 +768,7 @@ void Robot::Draw([[maybe_unused]]float game_anim_time, [[maybe_unused]]Vector2 m
     {
         // Fade in/out
         float alpha = 1.0f;
-        float elapsed = bot.dialog_duration - bot.dialog_timer;
+        float elapsed = bot.dialog_elapsed;
         if (elapsed < 0.15f) alpha = elapsed / 0.15f;
         if (bot.dialog_timer < 0.3f) alpha = bot.dialog_timer / 0.3f;
 
@@ -1010,7 +1021,7 @@ void Robot::OnPaletteHover(GateType type)
 {
     float current_time = static_cast<float>(GetTime())  ;
     int t = static_cast<int>(type);
-    if (bot.last_palette_hover_type != t || current_time - bot.last_palette_hover_time > 10.0f)
+    if (bot.last_palette_hover_type != t || current_time - bot.last_palette_hover_time > 3.0f)
     {
         bot.last_palette_hover_type = t;
         bot.last_palette_hover_time = current_time;

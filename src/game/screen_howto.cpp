@@ -111,7 +111,7 @@ namespace
 
 GameState UpdateHowToPlay(float)
 {
-    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE) || IsKeyPressed(KEY_H))
+    if (IsKeyPressed(KEY_M))
     {
         return GameState::HOW_TO_PLAY_TO_TITLE_TRANSITION;
     }
@@ -533,7 +533,7 @@ void DrawHowToPlay(float anim_time, float transition_time)
     float back_btn_x = (SCREEN_WIDTH - back_btn_w) / 2.0f;
     Rectangle back_btn = {back_btn_x, 660, back_btn_w, back_btn_h};
     bool back_hovered = CheckCollisionPointRec(GetMousePosition(), back_btn);
-    DrawHexButton(back_btn, "BACK TO TITLE  [ESC]", back_hovered, anim_time, {0, 150, 255, 255});
+    DrawHexButton(back_btn, "BACK TO TITLE  [M]", back_hovered, anim_time, {0, 150, 255, 255});
 
     float play_alpha = 0.3f + 0.2f * sinf(anim_time * 1.5f);
     const char* jump_text = "ENTER or SPACE to jump straight into the game!";

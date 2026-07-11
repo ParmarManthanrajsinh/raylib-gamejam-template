@@ -45,6 +45,7 @@ struct t_HexBot
 
     // Phase 3 tracking
     float dialog_duration = 0.0f;
+    float dialog_elapsed = 0.0f;
     float boop_timer = 0.0f;
 
     // Phase 4 tracking
@@ -98,7 +99,7 @@ private:
         const std::string& text,
         int priority = 1,
         RobotMood mood = RobotMood::IDLE,
-        float duration = 4.0f
+        float duration = 0.0f
     );
     void UpdateAnimation(float dt, Vector2 mouse_pos);
 };

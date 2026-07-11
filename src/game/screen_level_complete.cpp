@@ -14,7 +14,7 @@ GameState UpdateLevelComplete(float, const t_GameStats&)
     {
         return GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION;
     }
-    if (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_BACKSPACE))
+    if (IsKeyPressed(KEY_M))
     {
         return GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION;
     }

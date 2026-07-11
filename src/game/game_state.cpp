@@ -262,7 +262,7 @@ void Game::Update()
         robot.OnCheatDetected("increment");
         Evaluate();
     }
-    if (IsKeyPressed(KEY_ESCAPE))
+    if (IsKeyPressed(KEY_M))
     {
         selected_gate_index = -1;
         wire_drag_state = {};
