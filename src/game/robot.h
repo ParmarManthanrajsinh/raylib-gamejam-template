@@ -1,7 +1,6 @@
 #pragma once
 #include <raylib.h>
 #include <string>
-#include <vector>
 #include "gates.h" // For GateType
 #include "hex_grid.h" // IWYU pragma: keep
 
@@ -102,5 +101,4 @@ private:
         float duration = 4.0f
     );
     void UpdateAnimation(float dt, Vector2 mouse_pos);
-    std::string GetRandomDialog(const std::vector<std::string>& list);
 };
