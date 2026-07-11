@@ -9,9 +9,9 @@
 #include <cstdlib>
 
 // --- Dialogs ---
-namespace dialogs
+namespace Dialogs
 {
-static constexpr std::array diag_and =
+constexpr std::array diag_and =
 {
     "AND gate! The beige sedan of logic gates.",
     "You ANDed that in. I see what you did there.",
@@ -21,7 +21,7 @@ static constexpr std::array diag_and =
     "AND so it begins...",
 };
 
-static constexpr std::array diag_or =
+constexpr std::array diag_or =
 {
     "OR gate! Finally, some decision paralysis.",
     "OR you could've chosen XOR. But OR is fine, I guess.",
@@ -31,7 +31,7 @@ static constexpr std::array diag_or =
     "OR... you could restart. No? We're doing OR? Fine.",
 };
 
-static constexpr std::array diag_not =
+constexpr std::array diag_not =
 {
     "NOT gate! Philosophically questioning everything.",
     "NOT your average gate. (See what I did there?)",
@@ -41,7 +41,7 @@ static constexpr std::array diag_not =
     "NOT bad for a first gate.",
 };
 
-static constexpr std::array diag_xor =
+constexpr std::array diag_xor =
 {
     "XOR gate! Fancy! You read the manual!",
     "XOR means 'exclusive or'. You feel exclusive now, right?",
@@ -51,7 +51,7 @@ static constexpr std::array diag_xor =
     "XORing you been keeping those skills a secret?",
 };
 
-static constexpr std::array diag_nand =
+constexpr std::array diag_nand =
 {
     "NAND gate! The people's gate. Very democratic.",
     "NAND: NOT + AND = NOT what you expected? Well played.",
@@ -61,7 +61,7 @@ static constexpr std::array diag_nand =
     "NAND said, 'I'm not like other gates.'",
 };
 
-static constexpr std::array diag_nor =
+constexpr std::array diag_nor =
 {
     "NOR gate. The 'nope' of logic gates.",
     "NOR-mal Tuesday with this gate.",
@@ -71,7 +71,7 @@ static constexpr std::array diag_nor =
     "NOR you going to use any other gates?",
 };
 
-static constexpr std::array diag_xnor =
+constexpr std::array diag_xnor =
 {
     "XNOR gate! Equality matters in this household.",
     "XNOR: the 'same difference' gate.",
@@ -81,14 +81,14 @@ static constexpr std::array diag_xnor =
     "XNOR: for people who say 'well, actually, they're the same picture.'",
 };
 
-static constexpr std::array diag_first_gate = 
+constexpr std::array diag_first_gate = 
 {
     "First gate! I'm so proud! (I have no idea if that's a good choice.)",
     "The journey of a thousand hexes begins with a single gate.",
     "Gate #1! Mark this day on your calendar! (Don't actually.)",
 };
 
-static constexpr std::array diag_wire_connected = 
+constexpr std::array diag_wire_connected = 
 {
     "Zzzzt! Wired! It's ALIVE! (Not really alive.)",
     "The spaghetti grows! Mangia!",
@@ -100,14 +100,14 @@ static constexpr std::array diag_wire_connected =
     "Signal flowing! Probably. Electrical signals are shy.",
 };
 
-static constexpr std::array diag_first_wire = 
+constexpr std::array diag_first_wire = 
 {
     "First wire! They grow up so fast!",
     "The first connection. Cherish this moment. It's all downhill from here.",
     "A baby wire is born! *wipes tear*",
 };
 
-static constexpr std::array diag_wire_deleted_disconnected = 
+constexpr std::array diag_wire_deleted_disconnected = 
 {
     "NOOOO! My beautiful wire!",
     "Cutting ties, I see. Very dramatic.",
@@ -116,7 +116,7 @@ static constexpr std::array diag_wire_deleted_disconnected =
     "You disconnected it. It had dreams, you know.",
 };
 
-static constexpr std::array diag_gate_deleted = 
+constexpr std::array diag_gate_deleted = 
 {
     "MURDERER! That gate had a family!",
     "Into the void it goes. *solemn music*",
@@ -128,7 +128,7 @@ static constexpr std::array diag_gate_deleted =
     "Logic gate rights violation! I'm documenting this.",
 };
 
-static constexpr std::array diag_clear = 
+constexpr std::array diag_clear = 
 {
     "NUKED! FROM ORBIT! The whole board!",
     "Reset! Fresh start! New you! (Same terrible wiring skills.)",
@@ -138,7 +138,7 @@ static constexpr std::array diag_clear =
     "Clear! Clean slate! Surely this time will be different!",
 };
 
-static constexpr std::array diag_normal_solve = 
+constexpr std::array diag_normal_solve = 
 {
     "YESSS! YOU DID IT! I NEVER DOUBTED YOU FOR A SECOND! (I doubted you a LOT.)",
     "BOOM! TARGET REACHED! HEX PUNCHER SUPREME!",
@@ -152,21 +152,21 @@ static constexpr std::array diag_normal_solve =
     "The hex is cast! ...No wait, the hex is MATCHED!",
 };
 
-static constexpr std::array diag_slow_solve = 
+constexpr std::array diag_slow_solve = 
 {
     "You did it! Eventually! Like a slow cooker of logic!",
     "Solved! At 0x%X! Only took you... *checks nonexistent watch*... a while.",
     "It's done. Was it worth the wait? The crowd is asleep. But it's done!",
 };
 
-static constexpr std::array diag_fast_solve = 
+constexpr std::array diag_fast_solve = 
 {
     "UNDER 15 SECONDS?! Are you a computer?! ...Wait, you are.",
     "Speed solves! You're either a genius or very lucky. (Probably lucky.)",
     "That was... disturbingly fast. I'm concerned for your mental health.",
 };
 
-static constexpr std::array diag_level_start = 
+constexpr std::array diag_level_start = 
 {
     "New puzzle! Target 0x%X. Good luck. You'll need it.",
     "A fresh circuit! The possibilities are endless! (They're actually quite limited.)",
@@ -174,7 +174,7 @@ static constexpr std::array diag_level_start =
     "Target: %d in hex? That's 0x%X. I'll let you work it out.",
 };
 
-static constexpr std::array diag_hints = 
+constexpr std::array diag_hints = 
 {
     "Need a hint? Check bit %d. It's supposed to be %d.",
     "Look at bit %d. It's outputting %d instead of %d.",
@@ -182,7 +182,7 @@ static constexpr std::array diag_hints =
     "Are you stuck? Check your logic on bit %d.",
 };
 
-static constexpr std::array diag_near_zone = 
+constexpr std::array diag_near_zone = 
 {
     "I see you looking at me. I'm not a museum exhibit.",
     "You know I can see you, right?",
@@ -194,7 +194,7 @@ static constexpr std::array diag_near_zone =
     "You're blocking my view of the circuit. Go build something.",
 };
 
-static constexpr std::array diag_close_zone = 
+constexpr std::array diag_close_zone = 
 {
     "Personal space! I have BOUNDARIES!",
     "TOO CLOSE! Back off! I'll call the cyber-police!",
@@ -204,7 +204,7 @@ static constexpr std::array diag_close_zone =
     "I'm flattered but I don't date outside my resolution.",
 };
 
-static constexpr std::array diag_boop = 
+constexpr std::array diag_boop = 
 {
     "Did you just BOOP me?! I'M A MACHINE! ...Do it again.",
     "BOOP! I HAVE BEEN BOOPED! System rebooting...",
@@ -213,7 +213,7 @@ static constexpr std::array diag_boop =
     "*boop* ...That's it? You came all the way over here to boop me?",
 };
 
-static constexpr std::array diag_hesitation = {
+constexpr std::array diag_hesitation = {
     "You good? You've been staring at the screen for a while.",
     "Tick tock... that's the sound of your puzzle not solving itself.",
     "Hello? Is anyone home? The circuit is waiting.",
@@ -222,7 +222,7 @@ static constexpr std::array diag_hesitation = {
     "You know, staring doesn't change the logic. (It actually does sometimes.)",
 };
 
-static constexpr std::array diag_speed = 
+constexpr std::array diag_speed = 
 {
     "WOAH THERE! Slow down! The gates can't keep up!",
     "You're moving like a caffeinated squirrel. Is this helping?",
@@ -230,7 +230,7 @@ static constexpr std::array diag_speed =
     "ZOOOOOM! What's the rush? The hex isn't going anywhere.",
 };
 
-static constexpr std::array diag_obstacle = 
+constexpr std::array diag_obstacle = 
 {
     "That's an obstacle. The red thing. With the X. Not a place for gates.",
     "You can't put a gate there. It's a restricted zone. Hex Berlin Wall.",
@@ -240,28 +240,28 @@ static constexpr std::array diag_obstacle =
     "The gate said 'no thanks' to that location.",
 };
 
-static constexpr std::array diag_input_pin = 
+constexpr std::array diag_input_pin = 
 {
     "That's an input pin. It sends signals out. It's extroverted.",
     "Click to start a wire! Or just hover menacingly. Your call.",
     "Signal source right here. 1 or 0. Deep stuff.",
 };
 
-static constexpr std::array diag_gate_pin = 
+constexpr std::array diag_gate_pin = 
 {
     "Pins! The gate's tiny hands.",
     "That's where the magic happens. (Electric magic.)",
     "Click to connect. Or don't. I'm not your supervisor.",
 };
 
-static constexpr std::array diag_output_pin = 
+constexpr std::array diag_output_pin = 
 {
     "The final destination! Route your wire here for glory!",
     "Output node. Where dreams come to become hex values.",
     "Connect this and you're one step closer to fame and fortune! (Not guaranteed.)",
 };
 
-static constexpr std::array diag_reroll = 
+constexpr std::array diag_reroll = 
 {
     "CHEATER DETECTED! I SAW THAT! REROLLING IS CHEATING!",
     "REROLL?! You think you can just change the target?!",
@@ -277,7 +277,7 @@ static constexpr std::array diag_reroll =
     "You must be the guy who savescum in roguelikes. I SEE you.",
 };
 
-static constexpr std::array diag_increment_toggle = 
+constexpr std::array diag_increment_toggle = 
 {
     "T-Key?! TOGGLING THE TARGET?! THAT'S CHEATING!",
     "Oh look, someone can't solve 0x%X so they just... changed it.",
@@ -291,13 +291,13 @@ static constexpr std::array diag_increment_toggle =
     "0x%X was too hard? So you cycled to 0x%s. I see how it is.",
 };
 
-static constexpr std::array diag_first_cheat_of_session = 
+constexpr std::array diag_first_cheat_of_session = 
 {
     "OH HO! FIRST CHEAT OF THE SESSION! We have a LIVE one!",
     "And there it is. The first R key of the day. I'm not mad, I'm disappointed.",
 };
 
-static constexpr std::array diag_zero_gate_solve = 
+constexpr std::array diag_zero_gate_solve = 
 {
     "YOU SOLVED IT WITH ZERO GATES?! That's... statistically improbable!",
     "0 gates. Zero. Zilch. The circuit is empty. And yet... target matched.",
@@ -307,7 +307,7 @@ static constexpr std::array diag_zero_gate_solve =
     "The ghost in the machine solved it for you. Or you got lucky. Probably lucky.",
 };
 
-static constexpr std::array diag_spaghetti = 
+constexpr std::array diag_spaghetti = 
 {
     "That's a lot of wires. Are you building a circuit or a bird's nest?",
     "Your wire-to-gate ratio is off the charts. It's... beautiful spaghetti.",
@@ -316,7 +316,7 @@ static constexpr std::array diag_spaghetti =
     "I've seen cleaner wiring in a dumpster fire. But carry on.",
 };
 
-static constexpr std::array diag_efficiency = 
+constexpr std::array diag_efficiency = 
 {
     "6 gates and still no solution? You're building a monument, not a circuit.",
     "You've placed %d gates. The answer is probably simpler. But go off.",
@@ -325,7 +325,7 @@ static constexpr std::array diag_efficiency =
     "Your circuit has more parts than I have lines of code. Which is saying something.",
 };
 
-static constexpr std::array diag_progress_bits_increased = 
+constexpr std::array diag_progress_bits_increased = 
 {
     "%d bits matching! Progress! I'm proud. (Mostly surprised.)",
     "One bit closer! The hex is in sight! (Maybe.)",
@@ -333,7 +333,7 @@ static constexpr std::array diag_progress_bits_increased =
     "%d of 4 bits. That's %d%%! I did the math. You're welcome.",
 };
 
-static constexpr std::array diag_regression_bits_decreased = 
+constexpr std::array diag_regression_bits_decreased = 
 {
     "And... you lost a bit. That's called 'regression testing' in the real world.",
     "You had %d bits! Now you have less! That's not how circuits work!",
@@ -341,7 +341,7 @@ static constexpr std::array diag_regression_bits_decreased =
     "You took one step forward and two steps back. Classic.",
 };
 
-static constexpr std::array diag_close_3_bits = 
+constexpr std::array diag_close_3_bits = 
 {
     "3 BITS MATCHING! SO CLOSE! DON'T SCREW IT UP! (You'll screw it up.)",
     "One bit away! The tension is UNBEARABLE! (It's actually bearable.)",
@@ -349,7 +349,7 @@ static constexpr std::array diag_close_3_bits =
     "You're so close I can almost taste it. Tastes like copper and binary.",
 };
 
-static constexpr std::array diag_deletion_spree = 
+constexpr std::array diag_deletion_spree = 
 {
     "You've deleted %d things. You OK? Need to talk about it?",
     "Delete. Delete. Delete. That's not fixing, that's frustration.",
@@ -357,7 +357,7 @@ static constexpr std::array diag_deletion_spree =
     "The delete button is not a therapy tool. But go off, king.",
 };
 
-static constexpr std::array diag_wire_anxiety = 
+constexpr std::array diag_wire_anxiety = 
 {
     "You keep starting wires and not finishing them. Commitment issues?",
     "Wire anxiety is real. I support you.",
@@ -365,7 +365,7 @@ static constexpr std::array diag_wire_anxiety =
     "You've had like 5 phantom wires. Just COMMIT.",
 };
 
-static constexpr std::array diag_palette_hover = 
+constexpr std::array diag_palette_hover = 
 {
     "Hmm, %s gate? Interesting choice.",
     "Thinking about %s? Bold move.",
@@ -375,7 +375,7 @@ static constexpr std::array diag_palette_hover =
     "You keep looking at %s. That says something about you.",
 };
 
-static constexpr std::array diag_session_end = 
+constexpr std::array diag_session_end = 
 {
     "Going so soon? But we were having such a good time! (We weren't.)",
     "Leaving already? Fine. Take your mediocre wiring skills with you.",
@@ -384,7 +384,7 @@ static constexpr std::array diag_session_end =
 };
 }
 
-using namespace dialogs;
+using namespace Dialogs;
 
 template<size_t N>
 static std::string GetRandomDialog(const std::array<const char*, N>& list)
