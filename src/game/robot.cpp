@@ -395,11 +395,14 @@ void Robot::UpdateAnimation(float dt, Vector2 mouse_pos) {
     bot.eye_offset.y += (target_y - bot.eye_offset.y) * 0.12f;
     
     // Typewriter logic
-    if (bot.dialog_timer > 0) {
+    if (bot.dialog_timer > 0) 
+    {
         bot.dialog_timer -= dt;
-        if (bot.type_cursor < bot.current_dialog.length()) {
+        if (bot.type_cursor < bot.current_dialog.length())
+        {
             bot.type_timer += dt;
-            if (bot.type_timer > 0.09f) {
+            if (bot.type_timer > 0.09f)
+            {
                 bot.type_timer = 0.0f;
                 bot.type_cursor++;
                 if (bot.type_cursor % 2 == 0) PlaySfx(SfxType::ROBOT_TALK);
