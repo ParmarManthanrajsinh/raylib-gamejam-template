@@ -454,8 +454,24 @@ void Robot::UpdateAnimation(float dt, Vector2 mouse_pos)
     bot.proximity_cooldown = std::max(0.0f, bot.proximity_cooldown - dt);
 
     // Position lerp toward screen target
-    bot.current_pos.x += (bot.target_pos.x - bot.current_pos.x) * dt * 4.0f;
-    bot.current_pos.y += (bot.target_pos.y - bot.current_pos.y) * dt * 4.0f;
+    if (bot.current_screen == RobotScreen::LEVEL_COMPLETE)
+    {
+        bot.target_pos.x = 400.0f + sinf(bot.anim_time * 2.5f) * 250.0f;
+        bot.target_pos.y = 300.0f + cosf(bot.anim_time * 1.8f) * 150.0f;
+        
+        bot.current_pos.x += (bot.target_pos.x - bot.current_pos.x) * dt * 6.0f;
+        bot.current_pos.y += (bot.target_pos.y - bot.current_pos.y) * dt * 6.0f;
+        
+        bot.trail.push_back(bot.current_pos);
+        if (bot.trail.size() > 25) bot.trail.erase(bot.trail.begin());
+    }
+    else
+    {
+        bot.current_pos.x += (bot.target_pos.x - bot.current_pos.x) * dt * 4.0f;
+        bot.current_pos.y += (bot.target_pos.y - bot.current_pos.y) * dt * 4.0f;
+        
+        if (!bot.trail.empty()) bot.trail.erase(bot.trail.begin());
+    }
 
     // Blink logic
     bot.blink_timer -= dt;
@@ -615,12 +631,15 @@ void Robot::Update
         }
         if (wrong_bit >= 0)
         {
+            RobotMood hint_mood = RobotMood::IDLE;
+            if (bot.trust < 30) hint_mood = RobotMood::SASSY;
+            else if (bot.trust >= 70) hint_mood = RobotMood::HAPPY;
             Speak
             (
                 TextFormat
                 (
                     GetRandomDialog(diag_hints).c_str(), wrong_bit, ((target_hex >> wrong_bit) & 1)
-                ), 2, RobotMood::SASSY
+                ), 2, hint_mood
             );
         }
     }
@@ -690,6 +709,19 @@ void Robot::Draw([[maybe_unused]]float game_anim_time, [[maybe_unused]]Vector2 m
     float bob_amp = 2.5f;
     Color border_color = {0, 200, 255, 255};
 
+    // Trust modulates idle bob & color
+    float trust_t = bot.trust / 100.0f;
+    bob_speed *= (1.8f - trust_t * 0.8f);
+    bob_amp *= (1.6f - trust_t * 0.6f);
+    if (bot.current_mood == RobotMood::IDLE)
+    {
+        border_color = {
+            static_cast<unsigned char>(100 * (1.0f - trust_t)),
+            static_cast<unsigned char>(100 + 155 * trust_t),
+            255, 255
+        };
+    }
+
     // Mood visuals
     if (bot.current_mood == RobotMood::HAPPY || bot.current_mood == RobotMood::EXCITED)
     {
@@ -717,6 +749,18 @@ void Robot::Draw([[maybe_unused]]float game_anim_time, [[maybe_unused]]Vector2 m
 
     float bob = sinf(bot.anim_time * bob_speed) * bob_amp;
     Vector2 p = { bot.current_pos.x, bot.current_pos.y + bob };
+
+    // Draw Trail
+    if (!bot.trail.empty())
+    {
+        for (size_t i = 1; i < bot.trail.size(); i++)
+        {
+            float alpha = static_cast<float>(i) / bot.trail.size();
+            Vector2 t1 = { bot.trail[i-1].x, bot.trail[i-1].y + sinf((bot.anim_time - 0.05f) * bob_speed) * bob_amp };
+            Vector2 t2 = { bot.trail[i].x, bot.trail[i].y + bob };
+            DrawLineEx(t1, t2, 8.0f * alpha, ColorAlpha(border_color, alpha * 0.6f));
+        }
+    }
 
     // Boop squish (uniform scale — DrawPoly doesn't support non-uniform)
     float boop_scale = 1.0f;
@@ -789,13 +833,27 @@ void Robot::Draw([[maybe_unused]]float game_anim_time, [[maybe_unused]]Vector2 m
         DrawLineEx({p.x - 4, p.y + 12}, {p.x + 4, p.y + 12}, 2.0f, WHITE);
     }
 
-    // Draw Affection Meter (Trust)
-    float meter_w = 40.0f;
-    Color meter_color = 
-        (bot.trust > 70) ? Color{50, 255, 100, 255} : 
-        ((bot.trust > 30) ? Color{255, 200, 50, 255} : Color{255, 50, 50, 255});
-    DrawRectangle((int)(p.x - meter_w/2), (int)(p.y + 40), (int)meter_w, 4, ColorAlpha(BLACK, 0.8f));
-    DrawRectangle((int)(p.x - meter_w/2), (int)(p.y + 40), (int)(meter_w * (bot.trust / 100.0f)), 4, meter_color);
+    // Draw Affection Meter (Trust) — only during gameplay
+    if (bot.current_screen == RobotScreen::PLAYING)
+    {
+        float meter_w = 40.0f;
+        float t = bot.trust / 100.0f;
+        Color meter_color;
+        if (t < 0.5f)
+        {
+            // Red -> Yellow
+            float u = t / 0.5f;
+            meter_color = {255, static_cast<unsigned char>(200 * u), 50, 255};
+        }
+        else
+        {
+            // Yellow -> Green
+            float u = (t - 0.5f) / 0.5f;
+            meter_color = {static_cast<unsigned char>(255 * (1.0f - u)), 255, 50, 255};
+        }
+        DrawRectangle((int)(p.x - meter_w/2), (int)(p.y + 40), (int)meter_w, 4, ColorAlpha(BLACK, 0.8f));
+        DrawRectangle((int)(p.x - meter_w/2), (int)(p.y + 40), (int)(meter_w * t), 4, meter_color);
+    }
 
     // Draw Speech Bubble
     if (bot.dialog_timer > 0)
@@ -1045,6 +1103,7 @@ void Robot::OnGatePlaced(GateType type, int total_gates)
 }
 void Robot::OnFirstGatePlaced([[maybe_unused]]GateType type)
 {
+    bot.trust = std::min(100, bot.trust + 1);
     Speak(GetRandomDialog(diag_first_gate), 2, RobotMood::HAPPY);
 }
 void Robot::OnWireConnected(int total_wires, [[maybe_unused]]int total_gates)
@@ -1056,6 +1115,7 @@ void Robot::OnWireConnected(int total_wires, [[maybe_unused]]int total_gates)
 }
 void Robot::OnFirstWireConnected()
 {
+    bot.trust = std::min(100, bot.trust + 1);
     Speak(GetRandomDialog(diag_first_wire), 2, RobotMood::HAPPY);
 }
 void Robot::OnCheat()
@@ -1104,6 +1164,7 @@ void Robot::OnWireDeleted()
     }
         
     else Speak(GetRandomDialog(diag_wire_deleted_disconnected), 3, RobotMood::SAD);
+    bot.trust = std::max(0, bot.trust - 1);
 }
 void Robot::OnGateDeleted([[maybe_unused]]GateType type, [[maybe_unused]]int total_gates)
 {
@@ -1112,9 +1173,9 @@ void Robot::OnGateDeleted([[maybe_unused]]GateType type, [[maybe_unused]]int tot
     else bot.recent_deletes = 1;
     bot.last_delete_time = current_time;
 
+    bot.trust = std::max(0, bot.trust - 1);
     if (bot.recent_deletes >= 3)
     {
-        bot.trust = std::max(0, bot.trust - 1);
         bot.patience = std::max(0.0f, bot.patience - 5.0f);
         Speak
         (
@@ -1127,11 +1188,12 @@ void Robot::OnGateDeleted([[maybe_unused]]GateType type, [[maybe_unused]]int tot
 }
 void Robot::OnClearPressed()
 {
+    bot.trust = std::max(0, bot.trust - 1);
     Speak(GetRandomDialog(diag_clear), 2, RobotMood::SURPRISED);
 }
 void Robot::OnSolved(int total_gates, int total_wires, float level_timer)
 {
-    bot.trust = std::min(100, bot.trust + 1);
+    bot.trust = std::min(100, bot.trust + (total_gates <= 5 ? 2 : 1));
     bot.patience = std::min(100.0f, bot.patience + 10.0f);
     if (total_gates == 0)
         Speak(GetRandomDialog(diag_zero_gate_solve), 4, RobotMood::SURPRISED);
@@ -1169,6 +1231,7 @@ void Robot::OnPaletteHover(GateType type)
 }
 void Robot::OnObstacleAttempt()
 {
+    bot.trust = std::max(0, bot.trust - 1);
     Speak(GetRandomDialog(diag_obstacle), 2, RobotMood::ANGRY);
 }
 void Robot::SetHoveredPin(const void* pin)

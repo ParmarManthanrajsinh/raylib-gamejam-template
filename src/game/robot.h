@@ -58,6 +58,9 @@ struct t_HexBot
     
     // Screen dialog timer
     float screen_dialog_timer = 0.0f;
+    
+    // Trail for flying
+    std::vector<Vector2> trail;
 };
 
 class Robot
