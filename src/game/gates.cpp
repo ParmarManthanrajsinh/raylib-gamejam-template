@@ -68,42 +68,42 @@ Vector2 GetGateOutputPinPos(const t_Gate& gate)
     return GetGateOutputPinPos(c);
 }
 
-namespace
-{
-    void DrawGlow(Vector2 center, float radius, Color color)
-    {
-        for (int i = 3; i >= 0; i--)
-        {
-            float r = radius + i * 4;
-            Color c = color;
-            c.a = 20;
-            DrawCircleV(center, r, c);
-        }
-    }
+// namespace
+// {
+//     void DrawGlow(Vector2 center, float radius, Color color)
+//     {
+//         for (int i = 3; i >= 0; i--)
+//         {
+//             float r = radius + i * 4;
+//             Color c = color;
+//             c.a = 20;
+//             DrawCircleV(center, r, c);
+//         }
+//     }
 
-    void DrawFilledPolygon(std::span<const Vector2> verts, Color fill)
-    {
-        if (verts.size() < 3) return;
-        for (std::size_t i = 1; i < verts.size() - 1; i++)
-        {
-            DrawTriangle(verts[0], verts[i], verts[i + 1], fill);
-        }
-    }
+//     void DrawFilledPolygon(std::span<const Vector2> verts, Color fill)
+//     {
+//         if (verts.size() < 3) return;
+//         for (std::size_t i = 1; i < verts.size() - 1; i++)
+//         {
+//             DrawTriangle(verts[0], verts[i], verts[i + 1], fill);
+//         }
+//     }
 
-    void DrawPolyOutline
-    (
-        std::span<const Vector2> verts,
-        Color color,
-        float thickness
-    )
-    {
-        for (std::size_t i = 0; i < verts.size(); i++)
-        {
-            std::size_t next = (i + 1) % verts.size();
-            DrawLineEx(verts[i], verts[next], thickness, color);
-        }
-    }
-}
+//     void DrawPolyOutline
+//     (
+//         std::span<const Vector2> verts,
+//         Color color,
+//         float thickness
+//     )
+//     {
+//         for (std::size_t i = 0; i < verts.size(); i++)
+//         {
+//             std::size_t next = (i + 1) % verts.size();
+//             DrawLineEx(verts[i], verts[next], thickness, color);
+//         }
+//     }
+// }
 
 void DrawGateShape
 (

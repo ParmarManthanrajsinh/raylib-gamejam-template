@@ -8,6 +8,7 @@
 #include <map> // IWYU pragma: keep
 #include <cstdlib>
 
+// Forward declaration for error fix
 class Robot;
 
 // --- Dialogs ---
