@@ -399,10 +399,10 @@ void Robot::UpdateAnimation(float dt, Vector2 mouse_pos) {
         bot.dialog_timer -= dt;
         if (bot.type_cursor < bot.current_dialog.length()) {
             bot.type_timer += dt;
-            if (bot.type_timer > 0.05f) {
+            if (bot.type_timer > 0.09f) {
                 bot.type_timer = 0.0f;
                 bot.type_cursor++;
-                if (bot.type_cursor % 3 == 0) PlaySfx(SfxType::ROBOT_TALK);
+                if (bot.type_cursor % 2 == 0) PlaySfx(SfxType::ROBOT_TALK);
             }
         }
     } else {
