@@ -456,16 +456,8 @@ void DrawTitleScreen(float anim_time, float transition_time)
     DrawTextShadowed
     (
         font, "A raylib Game Jam project  |  hex + merge themes",
-        155, 630, 12,
+        210, 630, 12,
         ColorAlpha({100, 150, 200, 255}, 0.35f)
-    );
-
-    float hint_alpha = 0.25f + 0.2f * sinf(anim_time * 1.5f);
-    DrawTextShadowed
-    (
-        font, "ENTER/SPACE to play   |   H for help   |   ESC to quit",
-        115, 690, 11,
-        ColorAlpha({150, 180, 220, 255}, hint_alpha)
     );
 
     if (transition_time > 0.0f)
