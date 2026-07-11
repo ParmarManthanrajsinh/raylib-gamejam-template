@@ -744,7 +744,9 @@ void Robot::Draw([[maybe_unused]]float game_anim_time, [[maybe_unused]]Vector2 m
 
     // Draw Affection Meter (Trust)
     float meter_w = 40.0f;
-    Color meter_color = (bot.trust > 70) ? Color{50, 255, 100, 255} : ((bot.trust > 30) ? Color{255, 200, 50, 255} : Color{255, 50, 50, 255});
+    Color meter_color = 
+        (bot.trust > 70) ? Color{50, 255, 100, 255} : 
+        ((bot.trust > 30) ? Color{255, 200, 50, 255} : Color{255, 50, 50, 255});
     DrawRectangle(p.x - meter_w/2, p.y + 25, meter_w, 4, ColorAlpha(BLACK, 0.8f));
     DrawRectangle(p.x - meter_w/2, p.y + 25, meter_w * (bot.trust / 100.0f), 4, meter_color);
 

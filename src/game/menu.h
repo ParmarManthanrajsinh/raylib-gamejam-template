@@ -16,7 +16,7 @@ enum class GameState
     LEVEL_COMPLETE_TO_TITLE_TRANSITION
 };
 
-struct GameStats
+struct t_GameStats
 {
     int gates_used;
     int wires_used;
@@ -26,13 +26,13 @@ struct GameStats
 
 GameState UpdateTitleScreen(float anim_time);
 GameState UpdateHowToPlay(float anim_time);
-GameState UpdateLevelComplete(float anim_time, const GameStats& stats);
+GameState UpdateLevelComplete(float anim_time, const t_GameStats& stats);
 void DrawTitleScreen(float anim_time, float transition_time = 0.0f);
 void DrawHowToPlay(float anim_time, float transition_time = 0.0f);
 void DrawLevelComplete
 (
     float anim_time,
     float transition_time,
-    const GameStats& stats,
+    const t_GameStats& stats,
     GameState game_state
 );

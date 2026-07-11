@@ -1,7 +1,7 @@
 #include "game.h"
-#include "assets.h"
+#include "assets.h" // IWYU pragma: keep
 #include "audio.h"
-#include "circuit.h"
+#include "circuit.h" // IWYU pragma: keep
 #include "gates.h"
 #include "hex_grid.h"
 #include "menu.h"
@@ -19,7 +19,7 @@ void Game::Update()
         if (game_state == GameState::TITLE_SCREEN)
         {
             GameState next = UpdateTitleScreen(anim_time);
-            if (next == GameState::TITLE_TO_PLAY_TRANSITION) 
+            if (next == GameState::TITLE_TO_PLAY_TRANSITION)
             {
                 game_state = GameState::TITLE_TO_PLAY_TRANSITION;
                 PlaySfx(SfxType::SOLVED); // Juice for starting
@@ -160,18 +160,18 @@ void Game::Update()
     mouse_pos = GetMousePosition();
     hovered_pin = FindPinAt(mouse_pos);
     hovered_cell = GetGridCell(mouse_pos);
-    
+
     if (hovered_pin.IsValid()) {
         robot.SetHoveredPin(&hovered_pin);
     } else {
         robot.SetHoveredPin(nullptr);
     }
-    
+
     int hovered_palette = PickPaletteGate(mouse_pos);
     if (hovered_palette >= 0) {
         robot.OnPaletteHover(static_cast<GateType>(hovered_palette));
     }
-    
+
     float mouse_dx = mouse_pos.x - robot_last_mouse_pos.x;
     float mouse_dy = mouse_pos.y - robot_last_mouse_pos.y;
     float mouse_speed = sqrtf(mouse_dx*mouse_dx + mouse_dy*mouse_dy) / GetFrameTime();
@@ -191,7 +191,7 @@ void Game::Update()
             if (hovered_cell.IsValid())
             {
                 bool is_obstacle = false;
-                for (const auto& o : obstacles) 
+                for (const auto& o : obstacles)
                 {
                     if (o.row == hovered_cell.row && o.col == hovered_cell.col) { is_obstacle = true; break; }
                 }
@@ -238,7 +238,7 @@ void Game::Update()
         std::remove_if
         (
             particles.begin(), particles.end(),
-            [](const Particle& p)
+            [](const t_Particle& p)
             {
                 return p.life <= 0;
             }
@@ -271,21 +271,25 @@ void Game::Update()
         transition_time = 0;
         PlaySfx(SfxType::SOLVED);
     }
-    
-    if (wire_drag_state.IsActive() || dragging_gate_id != -1) 
+
+    if (wire_drag_state.IsActive() || dragging_gate_id != -1)
     {
         robot_last_action_time = anim_time;
     }
-    
-    robot.Update(anim_time, mouse_pos, level_timer, 
-                 output_bits, target_hex, solved,
-                 robot_mouse_still_time, robot_last_action_time,
-                 robot_idle_timer, robot_gate_type_counts,
-                 robot_delete_count, wires.size(),
-                 robot_obstacle_attempts, robot_matching_bits_prev);
-                 
+
+    robot.Update
+    (
+        anim_time, mouse_pos, level_timer,
+        output_bits, target_hex, solved,
+        robot_mouse_still_time, robot_last_action_time,
+        robot_idle_timer, robot_gate_type_counts,
+        robot_delete_count, wires.size(),
+        robot_obstacle_attempts, robot_matching_bits_prev
+    );
+
     // Phase 3.4 Mood Particles
-    if (GetRandomValue(0, 100) < 5) {
+    if (GetRandomValue(0, 100) < 5)
+    {
         RobotMood mood = robot.GetMood();
         Vector2 p = robot.GetPos();
         if (mood == RobotMood::HAPPY || mood == RobotMood::EXCITED) SpawnParticles({p.x, p.y - 40}, {255, 220, 50, 255}, 1);
@@ -293,4 +297,3 @@ void Game::Update()
         else if (mood == RobotMood::SURPRISED) SpawnParticles({p.x, p.y - 50}, {100, 200, 255, 255}, 1);
     }
 }
-

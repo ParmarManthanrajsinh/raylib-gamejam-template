@@ -28,7 +28,7 @@ struct t_PinHit
     }
 };
 
-struct Particle
+struct t_Particle
 {
     Vector2 pos;
     Vector2 vel;
@@ -66,7 +66,7 @@ class Game
         float transition_time;
         float level_complete_delay;
         float level_timer;
-        GameStats last_stats;
+        t_GameStats last_stats;
 
         // UI state
         int selected_gate_index; // -1 = none
@@ -78,7 +78,7 @@ class Game
         Vector2 ghost_pos;
 
         // Juice
-        std::vector<Particle> particles;
+        std::vector<t_Particle> particles;
         float screen_shake_time;
         RenderTexture2D render_target;
 

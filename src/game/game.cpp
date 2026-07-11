@@ -30,11 +30,11 @@ Game::Game()
   anim_time(0),
   solved_pulse(0),
   transition_time(0),
+  level_timer(0),
   selected_gate_index(-1),
   mouse_pos{-100, -100},
   ghost_pos{-100, -100},
   screen_shake_time(0),
-  level_timer(0),
   robot_idle_timer(0),
   robot_delete_count(0),
   robot_last_action_time(0),
@@ -93,7 +93,7 @@ void Game::Reset(bool is_clear)
     level_timer = 0;
     level_complete_delay = 0;
     screen_shake_time = 0;
-    
+
     // Ensure the target is actually reachable? A random 1-15 is fine.
     if (!is_clear) {
         target_hex = GetRandomValue(1, 15);
@@ -113,15 +113,23 @@ void Game::Evaluate()
         screen_shake_time = 0.4f;
         SpawnParticles({OUTPUT_CENTER_X, OUTPUT_CENTER_Y}, {0, 255, 136, 255}, 50);
         PlaySfx(SfxType::SOLVED);
-        
+
         robot.OnSolved(gates.size(), wires.size(), level_timer);
-        
+
         level_complete_delay = 1.5f;
         last_stats.gates_used = static_cast<int>(gates.size());
         last_stats.wires_used = static_cast<int>(wires.size());
         last_stats.time_taken = level_timer;
-        last_stats.efficiency_score = 10000 - static_cast<int>(level_timer * 10) - (last_stats.gates_used * 50) - (last_stats.wires_used * 25);
-        if (last_stats.efficiency_score < 0) last_stats.efficiency_score = 0;
+        last_stats.efficiency_score =
+            10000 - static_cast<int>
+            (
+                level_timer * 10
+            ) - static_cast<int>
+            (
+                last_stats.gates_used * 50
+            ) - static_cast<int>(last_stats.wires_used * 25);
+        if (last_stats.efficiency_score < 0)
+            last_stats.efficiency_score = 0;
     }
 }
 
@@ -129,7 +137,7 @@ void Game::SpawnParticles(Vector2 pos, Color color, int count)
 {
     for (int i = 0; i < count; i++)
     {
-        Particle p;
+        t_Particle p;
         p.pos = pos;
         float angle = static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 2.0f * PI;
         float speed = 20.0f + static_cast<float>(rand()) / static_cast<float>(RAND_MAX) * 100.0f;
@@ -145,7 +153,7 @@ t_Gate* Game::FindGateAt(int row, int col)
 {
     for (auto& g : gates)
     {
-        if (g.row == row && g.col == col) 
+        if (g.row == row && g.col == col)
         {
             return &g;
         }
@@ -219,15 +227,23 @@ t_PinHit Game::FindPinAt(Vector2 pos)
 
 void Game::Draw()
 {
-    bool is_level_complete_mode = (game_state == GameState::LEVEL_COMPLETE || 
-                                   game_state == GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION || 
-                                   game_state == GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION ||
-                                   game_state == GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION);
+    bool is_level_complete_mode =
+    (
+        game_state == GameState::LEVEL_COMPLETE ||
+        game_state == GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION ||
+        game_state == GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION ||
+        game_state == GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION
+    );
 
     if (game_state != GameState::PLAYING && !is_level_complete_mode)
     {
         BeginDrawing();
-        if (game_state == GameState::TITLE_SCREEN || game_state == GameState::TITLE_TO_PLAY_TRANSITION || game_state == GameState::TITLE_TO_HOW_TO_PLAY_TRANSITION)
+        if
+        (
+            game_state == GameState::TITLE_SCREEN ||
+            game_state == GameState::TITLE_TO_PLAY_TRANSITION ||
+            game_state == GameState::TITLE_TO_HOW_TO_PLAY_TRANSITION
+        )
         {
             DrawTitleScreen(anim_time, transition_time);
         }
@@ -235,7 +251,12 @@ void Game::Draw()
         {
             DrawTitleScreen(anim_time, transition_time);
         }
-        else if (game_state == GameState::HOW_TO_PLAY || game_state == GameState::HOW_TO_PLAY_TO_PLAY_TRANSITION || game_state == GameState::HOW_TO_PLAY_TO_TITLE_TRANSITION)
+        else if
+        (
+            game_state == GameState::HOW_TO_PLAY ||
+            game_state == GameState::HOW_TO_PLAY_TO_PLAY_TRANSITION ||
+            game_state == GameState::HOW_TO_PLAY_TO_TITLE_TRANSITION
+        )
         {
             DrawHowToPlay(anim_time, transition_time);
         }
@@ -271,15 +292,32 @@ void Game::Draw()
         DrawPoly(c, 6, HEX_SIZE * 0.95f, 90.0f, ColorAlpha({20, 0, 0, 255}, 0.8f));
         DrawPolyLinesEx(c, 6, HEX_SIZE * 0.95f, 90.0f, 2.0f, ColorAlpha(RED, 0.5f));
         // Draw cross/stripes to make it look like an obstacle
-        DrawLineEx({c.x - HEX_SIZE*0.5f, c.y - HEX_SIZE*0.5f}, {c.x + HEX_SIZE*0.5f, c.y + HEX_SIZE*0.5f}, 2.0f, ColorAlpha(RED, 0.3f));
-        DrawLineEx({c.x - HEX_SIZE*0.5f, c.y + HEX_SIZE*0.5f}, {c.x + HEX_SIZE*0.5f, c.y - HEX_SIZE*0.5f}, 2.0f, ColorAlpha(RED, 0.3f));
+        DrawLineEx
+        (
+            {c.x - HEX_SIZE*0.5f, c.y - HEX_SIZE*0.5f},
+            {c.x + HEX_SIZE*0.5f, c.y + HEX_SIZE*0.5f},
+            2.0f, ColorAlpha(RED, 0.3f)
+        );
+        DrawLineEx
+        (
+            {c.x - HEX_SIZE*0.5f, c.y + HEX_SIZE*0.5f},
+            {c.x + HEX_SIZE*0.5f, c.y - HEX_SIZE*0.5f},
+            2.0f, ColorAlpha(RED, 0.3f)
+        );
     }
 
     Vector2 drag_pos = {-1000, -1000};
     if (dragging_gate_id != -1)
     {
         drag_pos = mouse_pos;
-        if (hovered_cell.IsValid() && (!FindGateAt(hovered_cell.row, hovered_cell.col) || FindGateAt(hovered_cell.row, hovered_cell.col)->id == dragging_gate_id))
+        if
+        (
+            hovered_cell.IsValid() &&
+            (!
+                FindGateAt(hovered_cell.row, hovered_cell.col) ||
+                FindGateAt(hovered_cell.row, hovered_cell.col)->id == dragging_gate_id
+            )
+        )
         {
             Vector2 c = GetHexCenter(hovered_cell.row, hovered_cell.col);
             drag_pos.x = c.x * 0.5f + mouse_pos.x * 0.5f;
@@ -358,12 +396,12 @@ void Game::Draw()
         t_Gate fg = {0, ft, 0, 0};
         float gw = HEX_SIZE * 1.3f;
         float gh = HEX_SIZE * SQRT3 * 0.75f;
-        
+
         Vector2 gp = mouse_pos;
         if (hovered_cell.IsValid() && !cell_occupied)
         {
             Vector2 c = GetHexCenter(hovered_cell.row, hovered_cell.col);
-            
+
             // Draw highlight under cell
             float pulse = 0.6f + 0.4f * sinf(anim_time * 4);
             DrawFilledHexagon(c, HEX_SIZE + 4, ColorAlpha(SKYBLUE, 0.06f * pulse));
@@ -386,8 +424,15 @@ void Game::Draw()
         {
             float gw = HEX_SIZE * 1.3f;
             float gh = HEX_SIZE * SQRT3 * 0.75f;
-            
-            if (hovered_cell.IsValid() && (!FindGateAt(hovered_cell.row, hovered_cell.col) || FindGateAt(hovered_cell.row, hovered_cell.col)->id == dragging_gate_id))
+
+            if 
+            (
+                hovered_cell.IsValid() &&
+                (
+                    !FindGateAt(hovered_cell.row, hovered_cell.col) ||
+                    FindGateAt(hovered_cell.row, hovered_cell.col)->id == dragging_gate_id
+                )
+            )
             {
                 Vector2 c = GetHexCenter(hovered_cell.row, hovered_cell.col);
                 float pulse = 0.6f + 0.4f * sinf(anim_time * 4);
@@ -450,9 +495,14 @@ void Game::Draw()
         {
             bg_alpha = 0.85f * (transition_time / 0.8f);
         }
-        else if (game_state == GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION || game_state == GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION)
+        else if 
+        (
+            game_state == GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION ||
+            game_state == GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION
+        )
         {
-            // Keep bg_alpha at 0.85f while panel shrinks, then we will use a black circle wipe in DrawLevelComplete
+            /* Keep bg_alpha at 0.85f while panel shrinks, 
+            then we will use a black circle wipe in DrawLevelComplete */
             bg_alpha = 0.85f;
         }
 
@@ -472,9 +522,13 @@ void Game::Draw()
     BeginShaderMode(GetBloomShader());
     DrawTextureRec
     (
-        render_target.texture, 
-        { 0, 0, static_cast<float>(render_target.texture.width), static_cast<float>(-render_target.texture.height) }, 
-        { 0, 0 }, 
+        render_target.texture,
+        { 
+            0, 0, 
+            static_cast<float>(render_target.texture.width), 
+            static_cast<float>(-render_target.texture.height) 
+        },
+        { 0, 0 },
         WHITE
     );
     EndShaderMode();

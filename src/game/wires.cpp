@@ -25,7 +25,9 @@ namespace
             {
                 if (g.id == w.from_id)
                 {
-                    if (g.id == dragging_gate_id) return GetGateOutputPinPos(drag_pos);
+                    if (g.id == dragging_gate_id)
+                        return GetGateOutputPinPos(drag_pos);
+                    
                     return GetGateOutputPinPos(g);
                 }
             }
@@ -33,7 +35,13 @@ namespace
         return {};
     }
 
-    Vector2 GetWireTargetPos(const t_Wire& w, const std::vector<t_Gate>& gates, int dragging_gate_id = -1, Vector2 drag_pos = {-1000, -1000})
+    Vector2 GetWireTargetPos
+    (
+        const t_Wire& w, 
+        const std::vector<t_Gate>& gates, 
+        int dragging_gate_id = -1, 
+        Vector2 drag_pos = {-1000, -1000}
+    )
     {
         if (w.to_type == 0)
         {
@@ -41,7 +49,9 @@ namespace
             {
                 if (g.id == w.to_id)
                 {
-                    if (g.id == dragging_gate_id) return GetGateInputPinPos(g.type, drag_pos, w.to_pin);
+                    if (g.id == dragging_gate_id) 
+                        return GetGateInputPinPos(g.type, drag_pos, w.to_pin);
+                    
                     return GetGateInputPinPos(g, w.to_pin);
                 }
             }
@@ -53,7 +63,12 @@ namespace
         return {};
     }
 
-    int GetWireSignal(const t_Wire& w, const int input_bits[4], const std::unordered_map<int, int>& gate_outputs)
+    int GetWireSignal
+    (
+        const t_Wire& w, 
+        const int input_bits[4], 
+        const std::unordered_map<int, int>& gate_outputs
+    )
     {
         if (w.from_type == 0)
         {
@@ -96,7 +111,9 @@ namespace
         Color base_dark = {40, 50, 65, static_cast<unsigned char>(255 * alpha)};
         
         line_width = has_signal ? 3.5f : 3.0f;
-        draw_color = has_signal ? ColorAlpha({0, 255, 255, 255}, 0.9f * alpha) : ColorAlpha({160, 175, 190, 255}, alpha);
+        draw_color = has_signal ? 
+            ColorAlpha({0, 255, 255, 255}, 0.9f * alpha) : 
+            ColorAlpha({160, 175, 190, 255}, alpha);
         
         int segments = 24;
         Vector2 prev = p1;
@@ -133,7 +150,8 @@ namespace
                 float uuu = uu * u;
                 float ttt = tt * t;
 
-                Vector2 dot_pos = {
+                Vector2 dot_pos = 
+                {
                     uuu * p1.x + 3 * uu * t * cp1.x + 3 * u * tt * cp2.x + ttt * p2.x,
                     uuu * p1.y + 3 * uu * t * cp1.y + 3 * u * tt * cp2.y + ttt * p2.y
                 };
@@ -188,5 +206,15 @@ void DrawGhostWire(Vector2 from, Vector2 mouse_pos)
 {
     float pulse = 0.5f + 0.5f * sinf(GetTime() * 10.0f);
     Color ghost_color = ColorAlpha({0, 245, 212, 255}, 0.3f + 0.5f * pulse);
-    DrawBezierWire(from, mouse_pos, ghost_color, 1.0f, 3.0f + pulse * 1.5f, true, GetTime() * 2.0f, true);
+    DrawBezierWire
+    (
+        from, 
+        mouse_pos, 
+        ghost_color, 
+        1.0f, 
+        3.0f + pulse * 1.5f, 
+        true, 
+        GetTime() * 2.0f, 
+        true
+    );
 }

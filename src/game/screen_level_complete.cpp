@@ -8,7 +8,7 @@
 #include <cstring> // IWYU pragma: keep
 #include <raylib.h>
 
-GameState UpdateLevelComplete(float, const GameStats&)
+GameState UpdateLevelComplete(float, const t_GameStats&)
 {
     if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE))
     {
@@ -40,7 +40,7 @@ GameState UpdateLevelComplete(float, const GameStats&)
     return GameState::LEVEL_COMPLETE;
 }
 
-void DrawLevelComplete(float anim_time, float transition_time, const GameStats& stats, GameState game_state)
+void DrawLevelComplete(float anim_time, float transition_time, const t_GameStats& stats, GameState game_state)
 {
     float panel_w = 460.0f;
     float panel_h = 600.0f;

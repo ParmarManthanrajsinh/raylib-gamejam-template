@@ -1,5 +1,4 @@
 #include "game.h"
-#include "assets.h"
 #include "audio.h"
 #include "circuit.h"
 #include "gates.h"
@@ -9,7 +8,6 @@
 #include "ui.h"
 #include "wires.h"
 #include <algorithm>
-#include <cmath>
 #include <raylib.h>
 
 void Game::HandleClick(Vector2 pos)
