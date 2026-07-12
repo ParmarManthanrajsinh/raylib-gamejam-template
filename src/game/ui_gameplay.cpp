@@ -183,44 +183,42 @@ void DrawInfoBar(int target_hex, int current_hex, bool solved, float anim_time)
     float panel_x = (SCREEN_WIDTH - panel_w) / 2.0f;
     float panel_y = 12.0f;
     
-    // Tech panel
-    DrawRectangleRounded({panel_x, panel_y, panel_w, panel_h}, 0.5f, 4, {10, 14, 28, 220});
+    // Tech panel base
+    DrawRectangleRounded({panel_x, panel_y, panel_w, panel_h}, 0.3f, 6, {5, 10, 20, 230});
     
+    // Border
     Color border_color = solved ? ColorAlpha
     (
         {0, 255, 136, 255}, 
         0.8f + 0.2f * sinf(anim_time * 10.0f)
-    ) : Color{0, 150, 255, 150};
-    DrawRectangleRoundedLines({panel_x, panel_y, panel_w, panel_h}, 0.5f, 4, border_color);
+    ) : Color{0, 200, 255, 180};
+    DrawRectangleRoundedLines({panel_x, panel_y, panel_w, panel_h}, 0.3f, 6, border_color);
+
+    // Decorative corner dots
+    DrawCircleV({panel_x + 8, panel_y + 8}, 1.5f, border_color);
+    DrawCircleV({panel_x + panel_w - 8, panel_y + 8}, 1.5f, border_color);
+    DrawCircleV({panel_x + 8, panel_y + panel_h - 8}, 1.5f, border_color);
+    DrawCircleV({panel_x + panel_w - 8, panel_y + panel_h - 8}, 1.5f, border_color);
+
+    // Center Divider
+    DrawLineEx({panel_x + panel_w / 2.0f, panel_y + 6}, {panel_x + panel_w / 2.0f, panel_y + panel_h - 6}, 2.0f, ColorAlpha(border_color, 0.4f));
     
     // Glitch / Shake if solved
-    float rx = solved ? GetRandomValue(-1, 1) : 0;
-    float ry = solved ? GetRandomValue(-1, 1) : 0;
+    float rx = solved ? static_cast<float>(GetRandomValue(-1, 1)) : 0.0f;
+    float ry = solved ? static_cast<float>(GetRandomValue(-1, 1)) : 0.0f;
     
-    char target_text[32];
-    snprintf(target_text, sizeof(target_text), "TARGET: 0x%X", target_hex);
-    DrawTextShadowed
-    (
-        font, 
-        target_text, 
-        static_cast<int>(panel_x + 30 + rx), 
-        static_cast<int>(panel_y + 14 + ry), 
-        16, 
-        {136, 153, 187, 255}
-    );
+    // TARGET section
+    DrawTextShadowed(font, "TARGET", static_cast<int>(panel_x + 40 + rx), static_cast<int>(panel_y + 16 + ry), 12, {100, 150, 200, 255});
+    char target_val[16];
+    snprintf(target_val, sizeof(target_val), "0x%X", target_hex);
+    DrawTextShadowed(font, target_val, static_cast<int>(panel_x + 100 + rx), static_cast<int>(panel_y + 12 + ry), 20, {0, 200, 255, 255});
 
-    char output_text[32];
-    snprintf(output_text, sizeof(output_text), "OUT: 0x%X", current_hex);
+    // OUTPUT section
+    DrawTextShadowed(font, "OUTPUT", static_cast<int>(panel_x + 230 + rx), static_cast<int>(panel_y + 16 + ry), 12, {100, 150, 200, 255});
+    char output_val[16];
+    snprintf(output_val, sizeof(output_val), "0x%X", current_hex);
     Color output_color = solved ? Color{0, 255, 136, 255} : WHITE;
-    DrawTextShadowed
-    (
-        font, 
-        output_text, 
-        static_cast<int>(panel_x + 220 + rx), 
-        static_cast<int>(panel_y + 14 + ry), 
-        16, 
-        output_color
-    );
+    DrawTextShadowed(font, output_val, static_cast<int>(panel_x + 295 + rx), static_cast<int>(panel_y + 12 + ry), 20, output_color);
 
     if (solved)
     {

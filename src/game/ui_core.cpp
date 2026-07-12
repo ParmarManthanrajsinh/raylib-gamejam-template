@@ -10,7 +10,7 @@
 
 static Rectangle GetMenuButtonRectRaw()
 {
-    return { 496.0f, 8.0f, 130.0f, 24.0f };
+    return { 582.0f, 8.0f, 130.0f, 24.0f };
 }
 
 Rectangle GetMenuButtonRect()
