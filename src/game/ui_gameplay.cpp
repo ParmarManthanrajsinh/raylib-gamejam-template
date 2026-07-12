@@ -238,6 +238,11 @@ void DrawInfoBar(int target_hex, int current_hex, bool solved, float anim_time)
 
 void DrawInputNodes(int input_bits[4], const t_Pin* hovered_pin, float anim_time)
 {
+    float first_y = GetInputNodeY(0);
+    float last_y = GetInputNodeY(3);
+    DrawRectangleRounded({-10, first_y - 30, 60, (last_y - first_y) + 60}, 0.2f, 4, {8, 12, 22, 255});
+    DrawRectangleRoundedLines({-10, first_y - 30, 60, (last_y - first_y) + 60}, 0.2f, 4, {0, 150, 255, 100});
+
     for (int i = 0; i < 4; i++)
     {
         float y = GetInputNodeY(i);

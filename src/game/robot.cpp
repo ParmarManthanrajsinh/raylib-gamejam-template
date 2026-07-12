@@ -1196,14 +1196,14 @@ void Robot::Draw([[maybe_unused]]float game_anim_time, [[maybe_unused]]Vector2 m
         Vector2 size = MeasureTextEx(f, wrapped_text.c_str(), font_size, 1);
         Vector2 bubble_pos = { p.x - size.x / 2.0f, p.y - 55 - size.y };
 
-        float pad_lr = 14.0f * b_scale;
-        float pad_tb = 8.0f * b_scale;
+        float pad_lr = 20.0f * b_scale;
+        float pad_tb = 12.0f * b_scale;
         Rectangle bub_rect =
         {
             bubble_pos.x - pad_lr,
             bubble_pos.y - pad_tb,
-            (size.x + 28) * b_scale,
-            (size.y + 16) * b_scale
+            (size.x + 40) * b_scale,
+            (size.y + 24) * b_scale
         };
 
         // Clamp to right screen edge
