@@ -4,7 +4,7 @@
 #include "assets.h"
 #include "text_util.h"
 #include <cmath>
-#include <cstdio>
+#include <cstdio> // IWYU pragma: keep
 
 namespace
 {
@@ -43,10 +43,16 @@ namespace
         // Arrow head at end
         float head_len = 10.0f;
         float head_angle = PI / 6;
-        Vector2 head_right = {to.x - dir.x * head_len * cosf(head_angle) + dir.y * head_len * sinf(head_angle),
-                              to.y - dir.y * head_len * cosf(head_angle) - dir.x * head_len * sinf(head_angle)};
-        Vector2 head_left = {to.x - dir.x * head_len * cosf(head_angle) - dir.y * head_len * sinf(head_angle),
-                             to.y - dir.y * head_len * cosf(head_angle) + dir.x * head_len * sinf(head_angle)};
+        Vector2 head_right =
+        {
+            to.x - dir.x * head_len * cosf(head_angle) + dir.y * head_len * sinf(head_angle),
+            to.y - dir.y * head_len * cosf(head_angle) - dir.x * head_len * sinf(head_angle)
+        };
+        Vector2 head_left =
+        {
+            to.x - dir.x * head_len * cosf(head_angle) - dir.y * head_len * sinf(head_angle),
+            to.y - dir.y * head_len * cosf(head_angle) + dir.x * head_len * sinf(head_angle)
+        };
         DrawLineEx(to, head_right, 2.5f, c);
         DrawLineEx(to, head_left, 2.5f, c);
         DrawLineEx(from, to, 1.5f + 1.0f * sinf(t * 2.0f), Fade(c, 0.3f));
@@ -59,13 +65,30 @@ namespace
         Color c = ColorAlpha({0, 255, 255, 255}, alpha);
 
         if (line1)
+        {
             DrawTextShadowed(font, line1, 90, 80, 15, c);
+        }
         if (line2)
-            DrawTextShadowed(font, line2, 90, 98, 13, ColorAlpha({200, 220, 255, 255}, alpha * 0.8f));
+        {
+            DrawTextShadowed
+            (
+                font, 
+                line2, 
+                90, 
+                98, 
+                13, 
+                ColorAlpha({200, 220, 255, 255}, alpha * 0.8f)
+            );
+        }
     }
 }
 
-void DrawTutorialOverlay(const t_TutorialState& ts, float anim_time, const std::vector<t_Gate>& gates)
+void DrawTutorialOverlay
+(
+    const t_TutorialState& ts, 
+    float anim_time, 
+    const std::vector<t_Gate>& gates
+)
 {
     if (ts.current_step == 0) return;
 
@@ -80,7 +103,13 @@ void DrawTutorialOverlay(const t_TutorialState& ts, float anim_time, const std::
         // Highlight info bar
         Rectangle info_bar = {(SCREEN_WIDTH - 400.0f) / 2.0f, 12.0f, 400.0f, 44.0f};
         DrawRectangleRounded(info_bar, 0.5f, 4, ColorAlpha({0, 255, 255, 255}, 0.06f));
-        DrawRectangleRoundedLines(info_bar, 0.5f, 4, Fade({0, 255, 255, 255}, 0.3f + 0.2f * sinf(t * 3.0f)));
+        DrawRectangleRoundedLines
+        (
+            info_bar, 
+            0.5f, 
+            4, 
+            Fade({0, 255, 255, 255}, 0.3f + 0.2f * sinf(t * 3.0f))
+        );
 
         // Highlight input nodes
         for (int i = 0; i < 4; i++)
@@ -96,7 +125,12 @@ void DrawTutorialOverlay(const t_TutorialState& ts, float anim_time, const std::
             DrawHighlightRing(pin, 12.0f, {0, 255, 136, 255}, t + b * 0.5f);
         }
 
-        DrawStepText("YOUR GOAL: Match the TARGET hex value", "Use logic gates to transform INPUT bits", t);
+        DrawStepText
+        (
+            "YOUR GOAL: Match the TARGET hex value", 
+            "Use logic gates to transform INPUT bits", 
+            t
+        );
     }
     else if (ts.current_step == 2)
     {
@@ -105,27 +139,55 @@ void DrawTutorialOverlay(const t_TutorialState& ts, float anim_time, const std::
 
         // Highlight OR gate in palette (index 1)
         Rectangle pal_btn = GetPaletteBtnRect(1);
-        DrawRectangleRounded({pal_btn.x - 4, pal_btn.y - 4, pal_btn.width + 8, pal_btn.height + 8},
-                             0.3f, 6, ColorAlpha({200, 100, 255, 255}, 0.12f + 0.08f * sinf(t * 4.0f)));
-        DrawRectangleRoundedLines({pal_btn.x - 4, pal_btn.y - 4, pal_btn.width + 8, pal_btn.height + 8},
-                                  0.3f, 6, Fade({200, 100, 255, 255}, 0.5f + 0.3f * sinf(t * 4.0f)));
+        DrawRectangleRounded
+        (
+            {pal_btn.x - 4, pal_btn.y - 4, pal_btn.width + 8, pal_btn.height + 8},
+            0.3f, 6, ColorAlpha({200, 100, 255, 255}, 0.12f + 0.08f * sinf(t * 4.0f))
+        );
+        DrawRectangleRoundedLines
+        (
+            {pal_btn.x - 4, pal_btn.y - 4, pal_btn.width + 8, pal_btn.height + 8},
+            0.3f, 6, Fade({200, 100, 255, 255}, 0.5f + 0.3f * sinf(t * 4.0f))
+        );
 
         // Arrow pointing down to NOT gate
         Vector2 arrow_start = {SCREEN_WIDTH / 2.0f, PALETTE_Y - 40.0f};
-        Vector2 arrow_end = {pal_btn.x + pal_btn.width / 2.0f, pal_btn.y + pal_btn.height + 8.0f};
+        Vector2 arrow_end = 
+        {
+            pal_btn.x + pal_btn.width / 2.0f, 
+            pal_btn.y + pal_btn.height + 8.0f
+        };
         DrawArrowBetween(arrow_start, arrow_end, {255, 150, 50, 255}, t);
 
-        DrawStepText("Pick the OR gate from the palette", "Click the orange-highlighted button below", t);
+        DrawStepText
+        (
+            "Pick the OR gate from the palette", 
+            "Click the orange-highlighted button below", 
+            t
+        );
     }
     else if (ts.current_step == 3)
     {
         // Dim palette area
-        DrawRectangle(0, PALETTE_Y - 4, SCREEN_WIDTH, SCREEN_HEIGHT - PALETTE_Y + 4, Fade(BLACK, 0.4f));
+        DrawRectangle
+        (
+            0, 
+            PALETTE_Y - 4, 
+            SCREEN_WIDTH, 
+            SCREEN_HEIGHT - PALETTE_Y + 4, 
+            Fade(BLACK, 0.4f)
+        );
 
         // Highlight grid area
         Rectangle grid_rect = GetGridRect();
         DrawRectangleRounded(grid_rect, 0.1f, 4, ColorAlpha({0, 255, 255, 255}, 0.04f));
-        DrawRectangleRoundedLines(grid_rect, 0.1f, 4, Fade({0, 255, 200, 255}, 0.3f + 0.2f * sinf(t * 3.0f)));
+        DrawRectangleRoundedLines
+        (
+            grid_rect, 
+            0.1f, 
+            4, 
+            Fade({0, 255, 200, 255}, 0.3f + 0.2f * sinf(t * 3.0f))
+        );
 
         // Arrow from palette to grid
         float arrow_y = PALETTE_Y - 4.0f;
@@ -133,13 +195,25 @@ void DrawTutorialOverlay(const t_TutorialState& ts, float anim_time, const std::
         Vector2 arrow_end = {SCREEN_WIDTH / 2.0f, GRID_Y + GRID_H / 2.0f};
         DrawArrowBetween(arrow_start, arrow_end, {0, 255, 200, 255}, t);
 
-        DrawStepText("Place the OR gate on an empty hex cell", "Click any highlighted cell on the grid", t);
+        DrawStepText
+        (
+            "Place the OR gate on an empty hex cell", 
+            "Click any highlighted cell on the grid", 
+            t
+        );
     }
     else if (ts.current_step == 4)
     {
         // Dim irrelevant areas
         DrawRectangle(0, 0, SCREEN_WIDTH, GRID_Y - 10, Fade(BLACK, 0.15f));
-        DrawRectangle(0, PALETTE_Y - 4, SCREEN_WIDTH, SCREEN_HEIGHT - PALETTE_Y + 4, Fade(BLACK, 0.5f));
+        DrawRectangle
+        (
+            0, 
+            PALETTE_Y - 4, 
+            SCREEN_WIDTH, 
+            SCREEN_HEIGHT - PALETTE_Y + 4, 
+            Fade(BLACK, 0.5f)
+        );
 
         // Pulse input node output pins (left side)
         for (int i = 0; i < 4; i++)
@@ -161,18 +235,36 @@ void DrawTutorialOverlay(const t_TutorialState& ts, float anim_time, const std::
                 // Draw connecting line hint between input and gate
                 Vector2 from = {70.0f, GetInputNodeY(1)};
                 Vector2 to = GetGateInputPinPos(gate, 0);
-                DrawLineEx(from, to, 1.0f, Fade({0, 255, 255, 255}, 0.15f + 0.1f * sinf(t * 2.0f)));
+                DrawLineEx
+                (
+                    from, 
+                    to, 
+                    1.0f, 
+                    Fade({0, 255, 255, 255}, 0.15f + 0.1f * sinf(t * 2.0f))
+                );
                 break;
             }
         }
 
-        DrawStepText("STEP 4: Wire INPUT to GATE", "Click a glowing INPUT pin, then the gate's input pin", t);
+        DrawStepText
+        (
+            "STEP 4: Wire INPUT to GATE", 
+            "Click a glowing INPUT pin, then the gate's input pin", 
+            t
+        );
     }
     else if (ts.current_step == 5)
     {
         // Dim irrelevant areas
         DrawRectangle(0, 0, SCREEN_WIDTH, GRID_Y - 10, Fade(BLACK, 0.15f));
-        DrawRectangle(0, PALETTE_Y - 4, SCREEN_WIDTH, SCREEN_HEIGHT - PALETTE_Y + 4, Fade(BLACK, 0.5f));
+        DrawRectangle
+        (
+            0, 
+            PALETTE_Y - 4, 
+            SCREEN_WIDTH, 
+            SCREEN_HEIGHT - PALETTE_Y + 4, 
+            Fade(BLACK, 0.5f)
+        );
 
         // Pulse the placed gate's output pin
         for (const auto& gate : gates)
@@ -192,7 +284,12 @@ void DrawTutorialOverlay(const t_TutorialState& ts, float anim_time, const std::
             DrawHighlightRing(pin, 12.0f, {0, 255, 136, 255}, t + b * 0.3f);
         }
 
-        DrawStepText("STEP 5: Wire GATE to OUTPUT", "Click the gate's OUTPUT pin, then an OUTPUT node pin", t);
+        DrawStepText
+        (
+            "STEP 5: Wire GATE to OUTPUT", 
+            "Click the gate's OUTPUT pin, then an OUTPUT node pin", 
+            t
+        );
     }
     else if (ts.current_step == 6)
     {
@@ -206,9 +303,31 @@ void DrawTutorialOverlay(const t_TutorialState& ts, float anim_time, const std::
         float cx = (SCREEN_WIDTH - size.x) / 2.0f;
         float cy = SCREEN_HEIGHT / 2.0f - 20.0f;
         for (int r = 20; r > 0; r -= 4)
-            DrawCircleV({cx + size.x / 2.0f, cy + 16.0f}, (float)r, ColorAlpha({0, 255, 200, 255}, (float)(20 - r) / 100.0f * pulse));
-        DrawTextShadowed(font, ready, (int)cx, (int)cy, 32, ColorAlpha({0, 255, 200, 255}, pulse));
-
-        DrawTextShadowed(font, "Get ready for real puzzles!", (int)cx, (int)(cy + 40), 16, ColorAlpha({200, 220, 255, 255}, 0.7f * pulse));
+        {
+            DrawCircleV
+            (
+                {cx + size.x / 2.0f, cy + 16.0f}, 
+                static_cast<float>(r), 
+                ColorAlpha({0, 255, 200, 255}, static_cast<float>(20 - r) / 100.0f * pulse)
+            );
+        }
+        DrawTextShadowed
+        (
+            font, 
+            ready, 
+            static_cast<int>(cx), 
+            static_cast<int>(cy), 
+            32, 
+            ColorAlpha({0, 255, 200, 255}, pulse)
+        );
+        DrawTextShadowed
+        (
+            font, 
+            "Get ready for real puzzles!", 
+            static_cast<int>(cx), 
+            static_cast<int>(cy + 40), 
+            16, 
+            ColorAlpha({200, 220, 255, 255}, 0.7f * pulse)
+        );
     }
 }

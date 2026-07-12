@@ -31,9 +31,9 @@ GameState UpdateLevelComplete(float, const t_GameStats&)
         Rectangle next_btn = {btn_x, panel_y + 380.0f, btn_w, btn_h};
         Rectangle menu_btn = {btn_x, panel_y + 450.0f, btn_w, btn_h};
 
-        if (CheckCollisionPointRec(mpos, next_btn)) 
+        if (CheckCollisionPointRec(mpos, next_btn))
             return GameState::LEVEL_COMPLETE_TO_PLAY_TRANSITION;
-        if (CheckCollisionPointRec(mpos, menu_btn)) 
+        if (CheckCollisionPointRec(mpos, menu_btn))
             return GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION;
     }
 
@@ -79,12 +79,21 @@ void DrawLevelComplete(float anim_time, float transition_time, const t_GameStats
     static Vector2 confetti_vel[100];
     static bool confetti_init = false;
 
-    if (game_state == GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION && transition_time < 0.1f)
+    if
+    (
+        game_state == GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION &&
+        transition_time < 0.1f
+    )
     {
         confetti_init = false;
     }
 
-    if (!confetti_init && scale > 0.5f && game_state == GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION)
+    if
+    (
+        !confetti_init &&
+        scale > 0.5f &&
+        game_state == GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION
+    )
     {
         confetti_init = true;
         for (int i = 0; i < 100; i++)
@@ -135,11 +144,20 @@ void DrawLevelComplete(float anim_time, float transition_time, const t_GameStats
         float gh = current_h + i * 10 * scale;
         float gx = (SCREEN_WIDTH - gw) / 2.0f;
         float gy = (SCREEN_HEIGHT - gh) / 2.0f;
-        DrawRectangleRounded({gx, gy, gw, gh}, 0.1f, 8, ColorAlpha({0, 200, 255, 255}, 0.05f * scale));
+        DrawRectangleRounded
+        (
+            {gx, gy, gw, gh},
+            0.1f, 8,
+            ColorAlpha({0, 200, 255, 255}, 0.05f * scale)
+        );
     }
 
     // Draw neon panel base
-    DrawRectangleRounded({panel_x, panel_y, current_w, current_h}, 0.1f, 8, ColorAlpha({10, 15, 25, 255}, 0.98f));
+    DrawRectangleRounded
+    (
+        {panel_x, panel_y, current_w, current_h},
+        0.1f, 8, ColorAlpha({10, 15, 25, 255}, 0.98f)
+    );
 
     // Panel Background Detail: Scrolling circuit grid
     BeginScissorMode((int)panel_x, (int)panel_y, (int)current_w, (int)current_h);
@@ -147,13 +165,25 @@ void DrawLevelComplete(float anim_time, float transition_time, const t_GameStats
     for (int i = -1; i < 20; i++)
     {
         float gy = panel_y + i * 40 * scale + grid_y * scale;
-        DrawLineEx({panel_x, gy}, {panel_x + current_w, gy}, 1.0f, ColorAlpha({0, 255, 255, 255}, 0.1f));
+        DrawLineEx
+        (
+            {panel_x, gy},
+            {panel_x + current_w, gy},
+            1.0f,
+            ColorAlpha({0, 255, 255, 255}, 0.1f)
+        );
     }
     float grid_x = fmodf(anim_time * 20.0f, 40.0f);
     for (int i = -1; i < 15; i++)
     {
         float gx = panel_x + i * 40 * scale + grid_x * scale;
-        DrawLineEx({gx, panel_y}, {gx, panel_y + current_h}, 1.0f, ColorAlpha({0, 255, 255, 255}, 0.1f));
+        DrawLineEx
+        (
+            {gx, panel_y},
+            {gx, panel_y + current_h},
+            1.0f,
+            ColorAlpha({0, 255, 255, 255}, 0.1f)
+        );
     }
     EndScissorMode();
 
@@ -179,7 +209,11 @@ void DrawLevelComplete(float anim_time, float transition_time, const t_GameStats
         "CPU IS PLEASED."
     };
     static int title_idx = 0;
-    if (game_state == GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION && transition_time < 0.1f)
+    if
+    (
+        game_state == GameState::PLAYING_TO_LEVEL_COMPLETE_TRANSITION &&
+        transition_time < 0.1f
+    )
     {
         title_idx = GetRandomValue(0, 5);
     }
@@ -188,9 +222,18 @@ void DrawLevelComplete(float anim_time, float transition_time, const t_GameStats
     // Funny Ranks
     std::string_view rank = "Silicon Wizard";
     Color rank_col = {0, 255, 255, 255};
-    if (stats.efficiency_score < 5000) { rank = "Magic Smoke Releaser"; rank_col = RED; }
-    else if (stats.efficiency_score < 7000) { rank = "Spaghetti Chef"; rank_col = ORANGE; }
-    else if (stats.efficiency_score < 8500) { rank = "Needs More Coffee"; rank_col = YELLOW; }
+    if (stats.efficiency_score < 5000)
+    {
+        rank = "Magic Smoke Releaser"; rank_col = RED;
+    }
+    else if (stats.efficiency_score < 7000)
+    {
+        rank = "Spaghetti Chef"; rank_col = ORANGE;
+    }
+    else if (stats.efficiency_score < 8500)
+    {
+        rank = "Needs More Coffee"; rank_col = YELLOW;
+    }
 
     // Lazy Developer rule!
     if (stats.gates_used == 0)
@@ -199,12 +242,16 @@ void DrawLevelComplete(float anim_time, float transition_time, const t_GameStats
         rank = "Lazy Developer";
         rank_col = MAGENTA;
     }
-    else if (stats.efficiency_score < 9500) { rank = "Solid Developer"; rank_col = GREEN; }
+    else if (stats.efficiency_score < 9500)
+    {
+        rank = "Solid Developer";
+        rank_col = GREEN;
+    }
 
     static float state_time = 0;
-    if (game_state == GameState::LEVEL_COMPLETE) 
+    if (game_state == GameState::LEVEL_COMPLETE)
         state_time += GetFrameTime();
-    else 
+    else
         state_time = 0;
 
     bool is_outbound =
@@ -232,7 +279,15 @@ void DrawLevelComplete(float anim_time, float transition_time, const t_GameStats
     // Blue split
     DrawTextEx(font, title, {tx + 2 * scale, ty}, 32 * scale, 2, ColorAlpha(BLUE, 0.8f));
     // Main White/Cyan
-    DrawTextEx(font, title, {tx, ty}, 32 * scale, 2, ColorAlpha({150, 255, 255, 255}, 0.9f + 0.1f * pulse));
+    DrawTextEx
+    (
+        font,
+        title,
+        {tx, ty},
+        32 * scale,
+        2,
+        ColorAlpha({150, 255, 255, 255}, 0.9f + 0.1f * pulse)
+    );
 
     // Divider Line 1
     float div1_y = panel_y + 90 * scale;
@@ -335,7 +390,10 @@ void DrawLevelComplete(float anim_time, float transition_time, const t_GameStats
         2.0f,
         ColorAlpha({0, 255, 255, 255}, 0.5f)
     );
-    float dot2_x = panel_x + panel_w*scale - 40*scale - fmodf(anim_time * 200.0f, panel_w*scale - 80*scale);
+    float dot2_x = panel_x + panel_w*scale - 40*scale - fmodf
+    (
+        anim_time * 200.0f, panel_w*scale - 80*scale
+    );
     DrawCircleV({dot2_x, div2_y}, 4.0f*scale, {255, 255, 255, 255});
 
     if (is_outbound || (game_state == GameState::LEVEL_COMPLETE && state_time > 1.0f))
@@ -359,9 +417,23 @@ void DrawLevelComplete(float anim_time, float transition_time, const t_GameStats
         // Glowing box for Rank
         std::snprintf(buf, sizeof(buf), "Rank: %s", rank.data());
         float rw = MeasureTextEx(font, buf, 20 * scale, 1).x;
-        Rectangle rank_rect = {(SCREEN_WIDTH - rw)/2 - 20*scale, y_pos - 8*scale, rw + 40*scale, 36*scale};
-        DrawRectangleRounded(rank_rect, 0.3f, 8, ColorAlpha(rank_col, 0.2f + 0.1f * r_pulse));
-        DrawRectangleRoundedLines(rank_rect, 0.3f, 8, ColorAlpha(rank_col, 0.6f + 0.4f * r_pulse));
+        Rectangle rank_rect =
+        {
+            (SCREEN_WIDTH - rw)/2 - 20*scale,
+            y_pos - 8*scale,
+            rw + 40*scale,
+            36*scale
+        };
+        DrawRectangleRounded
+        (
+            rank_rect, 0.3f, 8,
+            ColorAlpha(rank_col, 0.2f + 0.1f * r_pulse)
+        );
+        DrawRectangleRoundedLines
+        (
+            rank_rect, 0.3f, 8,
+            ColorAlpha(rank_col, 0.6f + 0.4f * r_pulse)
+        );
 
         DrawTextShadowed
         (
@@ -450,4 +522,3 @@ void DrawLevelComplete(float anim_time, float transition_time, const t_GameStats
         DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, ColorAlpha(BLACK, t));
     }
 }
-

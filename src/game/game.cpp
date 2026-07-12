@@ -105,8 +105,13 @@ void Game::Reset(bool is_clear)
         obs.row = GetRandomValue(2, 6);
         obs.col = GetRandomValue(2, 6);
         bool exists = false;
-        for (const auto& o : obstacles) {
-            if (o.row == obs.row && o.col == obs.col) { exists = true; break; }
+        for (const auto& o : obstacles) 
+        {
+            if (o.row == obs.row && o.col == obs.col) 
+            { 
+                exists = true; 
+                break; 
+            }
         }
         if (!exists) obstacles.push_back(obs);
     }
@@ -126,7 +131,8 @@ void Game::Reset(bool is_clear)
     screen_shake_time = 0;
 
     // Ensure the target is actually reachable? A random 1-15 is fine.
-    if (!is_clear) {
+    if (!is_clear) 
+    {
         target_hex = GetRandomValue(1, 15);
         robot.OnLevelStart(target_hex);
     }
@@ -252,13 +258,6 @@ t_PinHit Game::FindPinAt(Vector2 pos)
     return {};
 }
 
-// Event handlers
-
-
-
-
-
-
 void Game::Draw()
 {
     bool is_level_complete_mode =
@@ -269,11 +268,14 @@ void Game::Draw()
         game_state == GameState::LEVEL_COMPLETE_TO_TITLE_TRANSITION
     );
 
-    if (game_state != GameState::PLAYING && 
+    if 
+    (
+        game_state != GameState::PLAYING && 
         game_state != GameState::TUTORIAL && 
         game_state != GameState::TUTORIAL_TO_PLAY_TRANSITION &&
-        !is_level_complete_mode)
-    {
+        !is_level_complete_mode
+    )
+    {   
         BeginDrawing();
         if
         (
@@ -420,7 +422,7 @@ void Game::Draw()
 
         Color oc = hov_out ? SKYBLUE
                            : (out_val ? Color{255, 96, 128, 255}
-                                      : Color{85, 119, 187, 255});
+                           : Color{85, 119, 187, 255});
 
         DrawCircleV(op, PIN_RADIUS, oc);
         DrawCircleLines(static_cast<int>(op.x), static_cast<int>(op.y), PIN_RADIUS, WHITE);
@@ -497,21 +499,20 @@ void Game::Draw()
     DrawInputNodes(input_bits, hover_pin_ptr, anim_time);
 
     bool has_out_wire =
-        std::any_of
-        (
-            wires.begin(), wires.end(),
-            [](const t_Wire& w)
-            {
-                return w.to_type == 1;
-            }
-        );
+    std::any_of
+    (
+        wires.begin(), wires.end(),
+        [](const t_Wire& w)
+        {
+            return w.to_type == 1;
+        }
+    );
     DrawOutputNode(output_bits, target_hex, hover_pin_ptr, has_out_wire, anim_time);
     DrawPalette(selected_gate_index);
     DrawMenuButton(anim_time);
     DrawMusicButton(anim_time);
 
-    int hex_val = output_bits[0] + output_bits[1] * 2 + output_bits[2] * 4 +
-        output_bits[3] * 8;
+    int hex_val = output_bits[0] + output_bits[1] * 2 + output_bits[2] * 4 + output_bits[3] * 8;
     DrawInfoBar(target_hex, hex_val, solved, anim_time);
 
     for (const auto& p : particles)

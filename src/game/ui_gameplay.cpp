@@ -208,17 +208,43 @@ void DrawInfoBar(int target_hex, int current_hex, bool solved, float anim_time)
     float ry = solved ? static_cast<float>(GetRandomValue(-1, 1)) : 0.0f;
     
     // TARGET section
-    DrawTextShadowed(font, "TARGET", static_cast<int>(panel_x + 40 + rx), static_cast<int>(panel_y + 16 + ry), 12, {100, 150, 200, 255});
+    DrawTextShadowed
+    (
+        font, 
+        "TARGET", 
+        static_cast<int>(panel_x + 40 + rx), 
+        static_cast<int>(panel_y + 16 + ry), 
+        12, {100, 150, 200, 255}
+    );
     char target_val[16];
     snprintf(target_val, sizeof(target_val), "0x%X", target_hex);
-    DrawTextShadowed(font, target_val, static_cast<int>(panel_x + 100 + rx), static_cast<int>(panel_y + 12 + ry), 20, {0, 200, 255, 255});
+    DrawTextShadowed
+    (
+        font, target_val, 
+        static_cast<int>(panel_x + 100 + rx), 
+        static_cast<int>(panel_y + 12 + ry), 
+        20, {0, 200, 255, 255}
+    );
 
     // OUTPUT section
-    DrawTextShadowed(font, "OUTPUT", static_cast<int>(panel_x + 230 + rx), static_cast<int>(panel_y + 16 + ry), 12, {100, 150, 200, 255});
+    DrawTextShadowed
+    (
+        font, 
+        "OUTPUT", 
+        static_cast<int>(panel_x + 230 + rx), 
+        static_cast<int>(panel_y + 16 + ry), 
+        12, {100, 150, 200, 255}
+    );
     char output_val[16];
     snprintf(output_val, sizeof(output_val), "0x%X", current_hex);
     Color output_color = solved ? Color{0, 255, 136, 255} : WHITE;
-    DrawTextShadowed(font, output_val, static_cast<int>(panel_x + 295 + rx), static_cast<int>(panel_y + 12 + ry), 20, output_color);
+    DrawTextShadowed
+    (
+        font, output_val, 
+        static_cast<int>(panel_x + 295 + rx), 
+        static_cast<int>(panel_y + 12 + ry), 
+        20, output_color
+    );
 
     if (solved)
     {
@@ -456,11 +482,16 @@ void DrawPalette(int selected_index)
                 float h_anim = border_anim - r.width;
                 DrawLineEx
                 (
-                    {r.x + r.width, r.y + h_anim}, {r.x + r.width, r.y + h_anim + 15}, 3.0f, anim_col
-                );
+                    {
+                        r.x + r.width, r.y + h_anim}, 
+                        {r.x + r.width, r.y + h_anim + 15}, 
+                        3.0f, anim_col
+                    );
                 DrawLineEx
-                (   
-                    {r.x, r.y + r.height - h_anim}, {r.x, r.y + r.height - h_anim - 15}, 3.0f, anim_col
+                (
+                    {r.x, r.y + r.height - h_anim}, 
+                    {r.x, r.y + r.height - h_anim - 15}, 
+                    3.0f, anim_col
                 );
             }
         }

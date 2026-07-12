@@ -9,7 +9,6 @@
 #include <cstring>
 #include <raylib.h>
 
-
 namespace
 {
     constexpr std::array funny_taglines =
@@ -185,7 +184,13 @@ namespace
         Color text_col = playing
             ? (hovered ? WHITE : Color{150, 200, 190, 255})
             : (hovered ? WHITE : Color{150, 100, 100, 255});
-        DrawTextShadowed(font, label, static_cast<int>(tx), static_cast<int>(ty), 14, text_col);
+        DrawTextShadowed
+        (
+            font,
+            label,
+            static_cast<int>(tx),
+            static_cast<int>(ty), 14, text_col
+        );
     }
 
     void DrawMenuBackground(float anim_time)
@@ -225,8 +230,14 @@ namespace
         float time = GetTime();
         for (int i = 0; i < 50; i++)
         {
-            float px = fmodf(static_cast<float>(i * 137) + time * 10.0f * (1.0f + (i % 3) * 0.5f), 720.0f);
-            float py = fmodf(static_cast<float>(i * 93) - time * 5.0f * (1.0f + (i % 5) * 0.2f) + 720.0f, 720.0f);
+            float px = fmodf
+            (
+                static_cast<float>(i * 137) + time * 10.0f * (1.0f + (i % 3) * 0.5f), 720.0f
+            );
+            float py = fmodf
+            (
+                static_cast<float>(i * 93) - time * 5.0f * (1.0f + (i % 5) * 0.2f) + 720.0f, 720.0f
+            );
             DrawCircleV
             (
                 {px, py},
@@ -260,12 +271,27 @@ namespace
                 px += (dx / dist) * force * 50.0f;
                 py += (dy / dist) * force * 50.0f;
                 // Draw connecting wire
-                DrawLineEx({px, py}, mpos, 1.5f * force, ColorAlpha({0, 255, 255, 255}, force * 0.5f));
+                DrawLineEx
+                (
+                    {px, py},
+                    mpos,
+                    1.5f * force,
+                    ColorAlpha({0, 255, 255, 255}, force * 0.5f)
+                );
             }
 
             t_Gate dummy{};
             dummy.type = static_cast<GateType>(i % 7);
-            DrawGateShape(dummy, px, py, 65.0f, 65.0f * 1.732f * 0.75f, 0, (dist < 150.0f) ? 0.6f : 0.15f);
+            DrawGateShape
+            (
+                dummy,
+                px,
+                py,
+                65.0f,
+                65.0f * 1.732f * 0.75f,
+                0,
+                (dist < 150.0f) ? 0.6f : 0.15f
+            );
         }
     }
 
@@ -418,7 +444,14 @@ namespace
         // Edge Vignette
         for (int i = 0; i < 40; i++)
         {
-            DrawRectangleLines(i, i, SCREEN_WIDTH - i*2, SCREEN_HEIGHT - i*2, ColorAlpha(BLACK, 0.05f));
+            DrawRectangleLines
+            (
+                i,
+                i,
+                SCREEN_WIDTH - i*2,
+                SCREEN_HEIGHT - i*2,
+                ColorAlpha(BLACK, 0.05f)
+            );
         }
 
         // Mouse Trail
@@ -518,8 +551,16 @@ void DrawTitleScreen(float anim_time, float transition_time, bool tutorial_requi
         {line_x, line_y}, {line_x + line_width, line_y},
         1.5f, ColorAlpha({0, 200, 255, 255}, line_pulse)
     );
-    DrawCircleV({line_x, line_y}, 2.5f, ColorAlpha({0, 255, 255, 255}, line_pulse * 1.5f));
-    DrawCircleV({line_x + line_width, line_y}, 2.5f, ColorAlpha({0, 255, 255, 255}, line_pulse * 1.5f));
+    DrawCircleV
+    (
+        {line_x, line_y}, 2.5f,
+        ColorAlpha({0, 255, 255, 255}, line_pulse * 1.5f)
+    );
+    DrawCircleV
+    (
+        {line_x + line_width, line_y}, 2.5f,
+        ColorAlpha({0, 255, 255, 255}, line_pulse * 1.5f)
+    );
 
     if (current_tagline < 0) current_tagline = GetRandomTagline();
     const char* tagline = funny_taglines[current_tagline];
@@ -587,4 +628,3 @@ void DrawTitleScreen(float anim_time, float transition_time, bool tutorial_requi
     DrawCRTAndMouseTrail();
     DrawMuteButton(anim_time);
 }
-

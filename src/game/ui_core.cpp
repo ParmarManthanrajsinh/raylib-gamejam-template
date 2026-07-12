@@ -7,7 +7,6 @@
 #include <cstdio> // IWYU pragma: keep
 #include <raylib.h>
 
-
 static Rectangle GetMenuButtonRectRaw()
 {
     return { 582.0f, 8.0f, 130.0f, 24.0f };
@@ -17,7 +16,6 @@ Rectangle GetMenuButtonRect()
 {
     return GetMenuButtonRectRaw();
 }
-
 
 bool CheckMenuButtonClick(Vector2 mouse_pos)
 {
@@ -130,13 +128,13 @@ void DrawMusicButton(float anim_time)
         for (int i = 1; i <= 2; i++)
         {
             float r_val = static_cast<float>(i) * 5.0f;
-                DrawCircleSectorLines
-                (
-                    {cx + 10.0f, cy},
-                    r_val,
-                    -35.0f, 35.0f,
-                    12, wave_col
-                );
+            DrawCircleSectorLines
+            (
+                {cx + 10.0f, cy},
+                r_val,
+                -35.0f, 35.0f,
+                12, wave_col
+            );
         }
     }
     else
