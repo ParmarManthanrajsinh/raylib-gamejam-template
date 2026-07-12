@@ -24,6 +24,9 @@ int main()
 #endif
 
     SetConfigFlags(FLAG_MSAA_4X_HINT);
+#if !defined(PLATFORM_WEB)
+    SetConfigFlags(FLAG_WINDOW_HIGHDPI);
+#endif
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hex Gate");
     HideCursor();
     InitAudio();

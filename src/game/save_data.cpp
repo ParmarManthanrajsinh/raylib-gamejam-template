@@ -1,7 +1,7 @@
 #include "save_data.h"
 #include <raylib.h>
 #include <string>
-#include <cstring>
+#include <cstring> // IWYU pragma: keep
 
 #if defined(PLATFORM_WEB)
 #include <emscripten/emscripten.h>
@@ -10,9 +10,10 @@
 t_SaveData LoadSaveData()
 {
     t_SaveData data = {};
-    
+
 #if defined(PLATFORM_WEB)
-    int completed = EM_ASM_INT({
+    int completed = EM_ASM_INT
+    ({
         var val = localStorage.getItem("hexgate_tutorial");
         return val === "1" ? 1 : 0;
     });
@@ -20,7 +21,7 @@ t_SaveData LoadSaveData()
 #else
     std::string path = GetApplicationDirectory();
     path += "savedata.dat";
-    
+
     if (FileExists(path.c_str()))
     {
         int bytesRead = 0;

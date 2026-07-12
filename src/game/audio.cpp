@@ -1,4 +1,5 @@
 #include "audio.h"
+#include "assets.h"
 #include <array>
 #include <cmath>
 #include <cstdlib>
@@ -122,7 +123,7 @@ void InitAudio()
     sounds[static_cast<int>(SfxType::ROBOT_BOOP)] =
         GenerateSfx(0.1f, 500, 800, 0.6f, 0);
 
-    bg_music = LoadMusicStream("resources/music.mp3");
+    bg_music = LoadMusicStream(GetResourcePath("music.mp3").data());
     bg_music.looping = true;
     SetMusicVolume(bg_music, MUSIC_VOLUME);
     PlayMusicStream(bg_music);
