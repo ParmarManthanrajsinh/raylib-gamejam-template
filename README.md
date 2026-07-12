@@ -32,13 +32,12 @@ Mouse:
 - Right-click a placed gate → delete it and its wires
 - Click Clear button to wipe the board
 
-### Play
-
-Open `DemoPrototype.html` in any modern browser — no build step required.
 
 ### Screenshots
 
-_TODO: Add gameplay screenshots or animated GIFs._
+![Hex Gate Screenshot 1](screenshots/screenshot1.png)
+![Hex Gate Screenshot 2](screenshots/screenshot2.png)
+![Hex Gate Screenshot 3](screenshots/screenshot3.png)
 
 ### Developers
 
