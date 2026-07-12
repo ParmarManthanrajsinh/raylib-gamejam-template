@@ -1,9 +1,6 @@
 ## Hex Gate — Logic Gate Puzzle
 
 ![Hex Gate](cover-art.png "Hex Gate")
-![Hex Gate Screenshot](screenshots/screenshot1.png "Hex Gate Screenshot")
-![Hex Gate Screenshot](screenshots/screenshot2.png "Hex Gate Screenshot")
-![Hex Gate Screenshot](screenshots/screenshot3.png "Hex Gate Screenshot")
 
 ### Description
 
