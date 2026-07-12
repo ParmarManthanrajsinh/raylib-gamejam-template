@@ -16,19 +16,41 @@ namespace
         float s,
         Color state_color,
         float glow_alpha,
-        float anim_time
+        float anim_time,
+        float speed,
+        Vector2 move_dir
     )
     {
         float bob = sinf(anim_time * 2.5f) * 0.8f * s;
         Vector2 tip = {pos.x, pos.y + bob};
 
+        float speed_norm = fminf(speed / 800.0f, 1.0f);
+        float stretch = 1.0f + speed_norm * 0.25f;
+        float tilt = speed_norm * 0.12f * move_dir.x;
+
         float w = 10.0f * s;
-        float h = 20.0f * s;
+        float h = 20.0f * s * stretch;
 
         Vector2 p1 = tip;
         Vector2 p2 = {tip.x - w, tip.y + h};
         Vector2 p3 = {tip.x - w * 0.25f, tip.y + h * 0.85f};
         Vector2 p4 = {tip.x + w * 0.65f, tip.y + h * 0.65f};
+
+        if (tilt != 0.0f)
+        {
+            float ct = cosf(tilt);
+            float st = sinf(tilt);
+            auto rotate = [&](Vector2 p) -> Vector2
+            {
+                float rx = (p.x - tip.x) * ct - (p.y - tip.y) * st + tip.x;
+                float ry = (p.x - tip.x) * st + (p.y - tip.y) * ct + tip.y;
+                return {rx, ry};
+            };
+            p1 = rotate(p1);
+            p2 = rotate(p2);
+            p3 = rotate(p3);
+            p4 = rotate(p4);
+        }
 
         Color glow = state_color;
         glow.a = static_cast<unsigned char>(50 * glow_alpha);
@@ -404,7 +426,16 @@ void t_CustomCursor::DrawHand(float anim_time) const
         glow_alpha = 1.3f + 0.3f * sinf(state_time * 5.0f);
     }
 
-    DrawArrowCursor(smooth_pos, scale, state_col, glow_alpha, anim_time);
+    Vector2 move_dir = {0.0f, 0.0f};
+    float dx = smooth_pos.x - prev_smooth.x;
+    float dy = smooth_pos.y - prev_smooth.y;
+    float len = sqrtf(dx * dx + dy * dy);
+    if (len > 0.5f)
+    {
+        move_dir = {dx / len, dy / len};
+    }
+
+    DrawArrowCursor(smooth_pos, scale, state_col, glow_alpha, anim_time, speed, move_dir);
 }
 
 void t_CustomCursor::DrawWireCarry(float anim_time) const
@@ -472,6 +503,27 @@ void t_CustomCursor::DrawWireCarry(float anim_time) const
     DrawCircleV(grip, 5.0f + grip_pulse * 2.0f, ColorAlpha({0, 245, 212, 255}, 0.2f));
     DrawPoly(grip, 6, 4.0f, anim_time * 30.0f, ColorAlpha({0, 245, 212, 255}, 0.7f));
     DrawPolyLines(grip, 6, 4.0f, anim_time * 30.0f, ColorAlpha(WHITE, 0.8f));
+
+    float bob = sinf(anim_time * 2.5f) * 0.8f;
+    Vector2 tip = {smooth_pos.x, smooth_pos.y + bob};
+    float grip_r = 3.5f + grip_pulse * 1.0f;
+    DrawCircleV(tip, grip_r + 2.0f, ColorAlpha({0, 245, 212, 255}, 0.15f));
+    DrawCircleV(tip, grip_r, ColorAlpha({0, 245, 212, 255}, 0.4f));
+    DrawCircleV(tip, grip_r * 0.5f, ColorAlpha(WHITE, 0.8f));
+
+    Vector2 tension_dir = {wire_source.x - smooth_pos.x, wire_source.y - smooth_pos.y};
+    float tension_len = sqrtf(tension_dir.x * tension_dir.x + tension_dir.y * tension_dir.y);
+    if (tension_len > 1.0f)
+    {
+        tension_dir.x /= tension_len;
+        tension_dir.y /= tension_len;
+    }
+    float tension_strength = fminf(tension_len / 300.0f, 1.0f);
+    Vector2 tension_end = {tip.x + tension_dir.x * 12.0f, tip.y + tension_dir.y * 12.0f};
+    Color tension_col = active
+        ? ColorAlpha({0, 255, 255, 255}, 0.3f * tension_strength)
+        : ColorAlpha({120, 140, 180, 255}, 0.2f * tension_strength);
+    DrawLineEx(tip, tension_end, 1.5f, tension_col);
 }
 
 void t_CustomCursor::DrawStateEffects(float anim_time) const
