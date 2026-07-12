@@ -18,7 +18,6 @@ struct t_RobotParticle
     Color col;
 };
 
-
 struct t_HexBot
 {
     Vector2 base_pos = {660, 530};

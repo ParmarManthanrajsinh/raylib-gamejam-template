@@ -1,4 +1,5 @@
 #include "audio.h"
+#include <array>
 #include <cmath>
 #include <cstdlib>
 #include <raylib.h>
@@ -6,7 +7,11 @@
 namespace
 {
     constexpr int SAMPLE_RATE = 44100;
+    constexpr float MUSIC_VOLUME = 0.45f;
     Sound sounds[static_cast<int>(SfxType::COUNT)];
+    Music bg_music;
+    bool music_enabled = true;
+
     Sound GenerateSfx
     (
         float duration,
@@ -57,7 +62,7 @@ namespace
 
     Sound GenerateArpeggio()
     {
-        float notes[3] = {400.0f, 600.0f, 900.0f};
+        constexpr std::array<float, 3> notes = {400.0f, 600.0f, 900.0f};
         float note_dur = 0.08f;
         float gap = 0.02f;
         int note_samples = static_cast<int>((SAMPLE_RATE * note_dur));
@@ -116,6 +121,11 @@ void InitAudio()
         GenerateSfx(0.03f, 700, 500, 0.12f, 0);
     sounds[static_cast<int>(SfxType::ROBOT_BOOP)] =
         GenerateSfx(0.1f, 500, 800, 0.6f, 0);
+
+    bg_music = LoadMusicStream("resources/music.mp3");
+    bg_music.looping = true;
+    SetMusicVolume(bg_music, MUSIC_VOLUME);
+    PlayMusicStream(bg_music);
 }
 
 void PlaySfx(SfxType type)
@@ -125,8 +135,32 @@ void PlaySfx(SfxType type)
     PlaySound(sounds[static_cast<int>(type)]);
 }
 
+void UpdateAudio()
+{
+    UpdateMusicStream(bg_music);
+}
+
+void SetMusicPlaying(bool playing)
+{
+    music_enabled = playing;
+    if (playing)
+    {
+        SetMusicVolume(bg_music, MUSIC_VOLUME);
+    }
+    else
+    {
+        SetMusicVolume(bg_music, 0.0f);
+    }
+}
+
+bool IsMusicPlaying()
+{
+    return music_enabled;
+}
+
 void ShutdownAudio()
 {
+    UnloadMusicStream(bg_music);
     for (int i = 0; i < static_cast<int>(SfxType::COUNT); i++)  UnloadSound(sounds[i]);
     CloseAudioDevice();
 }

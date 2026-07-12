@@ -1,5 +1,6 @@
 #include "menu.h"
 #include "assets.h"
+#include "audio.h"
 #include "hex_grid.h"
 #include "text_util.h"
 #include "gates.h"
@@ -9,6 +10,40 @@
 
 namespace
 {
+    void DrawMuteButton(float anim_time)
+    {
+        Font font = GetGameFont();
+        Rectangle r = {630.0f, 8.0f, 82.0f, 24.0f};
+        bool hovered = CheckCollisionPointRec(GetMousePosition(), r);
+        bool playing = IsMusicPlaying();
+
+        Color accent = playing ? Color{0, 200, 180, 255} : Color{120, 80, 80, 255};
+        Color bg = hovered ? Color{30, 40, 80, 255} : Color{15, 20, 40, 255};
+        Color border = hovered ? accent : Color{40, 80, 120, 255};
+
+        if (hovered)
+        {
+            float pulse = 0.5f + 0.5f * sinf(anim_time * 4.0f);
+            DrawRectangleRounded
+            (
+                {r.x - 2, r.y - 2, r.width + 4, r.height + 4},
+                0.3f, 6, ColorAlpha(accent, 0.15f * pulse)
+            );
+        }
+
+        DrawRectangleRounded(r, 0.3f, 6, bg);
+        DrawRectangleRoundedLines(r, 0.3f, 6, border);
+
+        const char* label = playing ? "SOUND [N]" : "MUTED [N]";
+        Vector2 text_size = MeasureTextEx(font, label, 14.0f, 1.0f);
+        float tx = r.x + (r.width - text_size.x) / 2.0f;
+        float ty = r.y + (r.height - text_size.y) / 2.0f;
+        Color text_col = playing
+            ? (hovered ? WHITE : Color{150, 200, 190, 255})
+            : (hovered ? WHITE : Color{150, 100, 100, 255});
+        DrawTextShadowed(font, label, static_cast<int>(tx), static_cast<int>(ty), 14, text_col);
+    }
+
     void DrawHexButton
     (
         Rectangle bounds,
@@ -115,6 +150,10 @@ GameState UpdateHowToPlay(float)
     {
         return GameState::HOW_TO_PLAY_TO_TITLE_TRANSITION;
     }
+    if (IsKeyPressed(KEY_N))
+    {
+        SetMusicPlaying(!IsMusicPlaying());
+    }
     if (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE))
     {
         return GameState::HOW_TO_PLAY_TO_PLAY_TRANSITION;
@@ -128,7 +167,13 @@ GameState UpdateHowToPlay(float)
         float btn_x = (SCREEN_WIDTH - btn_w) / 2.0f;
 
         Rectangle back_btn = {btn_x, 660, btn_w, btn_h};
+        Rectangle mute_btn = {630.0f, 8.0f, 82.0f, 24.0f};
 
+        if (CheckCollisionPointRec(mpos, mute_btn))
+        {
+            SetMusicPlaying(!IsMusicPlaying());
+            return GameState::HOW_TO_PLAY;
+        }
         if (CheckCollisionPointRec(mpos, back_btn))
             return GameState::HOW_TO_PLAY_TO_TITLE_TRANSITION;
     }
@@ -562,5 +607,6 @@ void DrawHowToPlay(float anim_time, float transition_time)
     }
 
     DrawCRTAndMouseTrail();
+    DrawMuteButton(anim_time);
 }
 

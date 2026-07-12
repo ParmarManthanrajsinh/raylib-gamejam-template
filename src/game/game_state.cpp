@@ -184,6 +184,7 @@ void Game::Update()
         anim_time += dt;
         if (screen_shake_time > 0) screen_shake_time -= dt;
         mouse_pos = GetMousePosition();
+        cursor.Update(mouse_pos, false, {}, 0, false, false, false, false, false, false, dt);
         robot.Update(dt, mouse_pos);
         return;
     }
@@ -236,6 +237,61 @@ void Game::Update()
     robot_last_mouse_pos = mouse_pos;
     if (mouse_speed < 5.0f) robot_mouse_still_time += GetFrameTime();
     else robot_mouse_still_time = 0;
+
+    {
+        bool wire_dragging = wire_drag_state.IsActive();
+        Vector2 wire_start = {wire_drag_state.start_x, wire_drag_state.start_y};
+        int wire_sig = 0;
+        if (wire_dragging)
+        {
+            if (wire_drag_state.from_type == 0)
+                wire_sig = input_bits[wire_drag_state.from_id];
+            else if (wire_drag_state.from_type == 1)
+            {
+                auto it = gate_outputs.find(wire_drag_state.from_id);
+                wire_sig = (it != gate_outputs.end()) ? it->second : 0;
+            }
+        }
+        bool gate_dragging = (dragging_gate_id != -1);
+        bool pin_is_hovered = hovered_pin.IsValid();
+        bool gate_is_hovered =
+            hovered_cell.IsValid() &&
+            FindGateAt(hovered_cell.row, hovered_cell.col) != nullptr &&
+            !pin_is_hovered;
+        bool button_is_hovered =
+            CheckMenuButtonClick(mouse_pos) ||
+            CheckMusicButtonClick(mouse_pos) ||
+            CheckCollisionPointRec(mouse_pos, GetClearButtonRect()) ||
+            PickPaletteGate(mouse_pos) >= 0;
+        bool is_forbidden = false;
+        if (selected_gate_index >= 0 && hovered_cell.IsValid())
+        {
+            bool is_obstacle = false;
+            for (const auto& o : obstacles)
+            {
+                if (o.row == hovered_cell.row && o.col == hovered_cell.col)
+                {
+                    is_obstacle = true;
+                    break;
+                }
+            }
+            is_forbidden = is_obstacle ||
+                FindGateAt(hovered_cell.row, hovered_cell.col) != nullptr;
+        }
+        bool left_clicked = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
+        cursor.Update
+        (
+            mouse_pos,
+            wire_dragging, wire_start, wire_sig,
+            gate_dragging,
+            pin_is_hovered,
+            gate_is_hovered,
+            button_is_hovered,
+            is_forbidden,
+            left_clicked,
+            GetFrameTime()
+        );
+    }
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
         HandleClick(mouse_pos);
@@ -341,6 +397,11 @@ void Game::Update()
         game_state = GameState::PLAYING_TO_TITLE_TRANSITION;
         transition_time = 0;
         PlaySfx(SfxType::SOLVED);
+    }
+    if (IsKeyPressed(KEY_N))
+    {
+        SetMusicPlaying(!IsMusicPlaying());
+        PlaySfx(SfxType::TOGGLE_INPUT);
     }
 
     if (wire_drag_state.IsActive() || dragging_gate_id != -1)

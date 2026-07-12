@@ -296,6 +296,7 @@ void Game::Draw()
             DrawHowToPlay(anim_time, transition_time);
         }
         robot.Draw(anim_time, mouse_pos);
+        cursor.Draw(anim_time);
         EndDrawing();
         return;
     }
@@ -507,15 +508,11 @@ void Game::Draw()
     DrawOutputNode(output_bits, target_hex, hover_pin_ptr, has_out_wire, anim_time);
     DrawPalette(selected_gate_index);
     DrawMenuButton(anim_time);
+    DrawMusicButton(anim_time);
 
     int hex_val = output_bits[0] + output_bits[1] * 2 + output_bits[2] * 4 +
         output_bits[3] * 8;
     DrawInfoBar(target_hex, hex_val, solved, anim_time);
-
-    if (wire_drag_state.IsActive())
-    {
-        DrawCircleV(mouse_pos, 5, ColorAlpha(SKYBLUE, 0.7f));
-    }
 
     for (const auto& p : particles)
     {
@@ -570,6 +567,7 @@ void Game::Draw()
     );
     EndShaderMode();
     robot.Draw(anim_time, mouse_pos);
+    cursor.Draw(anim_time);
     EndDrawing();
 }
 

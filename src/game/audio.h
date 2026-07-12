@@ -1,4 +1,5 @@
 #pragma once
+#include <raylib.h>
 
 enum class SfxType
 {
@@ -16,4 +17,7 @@ enum class SfxType
 
 void InitAudio();
 void PlaySfx(SfxType type);
+void UpdateAudio();
+void SetMusicPlaying(bool playing);
+bool IsMusicPlaying();
 void ShutdownAudio();

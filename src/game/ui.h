@@ -12,3 +12,6 @@ Rectangle GetClearButtonRect();
 Rectangle GetMenuButtonRect();
 bool CheckMenuButtonClick(Vector2 mouse_pos);
 void DrawMenuButton(float anim_time);
+Rectangle GetMusicButtonRect();
+bool CheckMusicButtonClick(Vector2 mouse_pos);
+void DrawMusicButton(float anim_time);

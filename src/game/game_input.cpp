@@ -291,6 +291,14 @@ void Game::HandleClick(Vector2 pos)
         return;
     }
 
+    // Music button
+    if (CheckMusicButtonClick(pos))
+    {
+        SetMusicPlaying(!IsMusicPlaying());
+        PlaySfx(SfxType::TOGGLE_INPUT);
+        return;
+    }
+
     // Clear button
     if (game_state == GameState::TUTORIAL) { /* no clear during tutorial */ }
     else if (CheckCollisionPointRec(pos, GetClearButtonRect()))

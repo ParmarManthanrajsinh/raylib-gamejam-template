@@ -5,6 +5,7 @@
 
 static void UpdateDrawFrame(Game *game)
 {
+    UpdateAudio();
     game->Update();
     game->Draw();
 }
@@ -24,6 +25,7 @@ int main()
 
     SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Hex Gate");
+    HideCursor();
     InitAudio();
     InitGameAssets();
     {

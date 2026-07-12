@@ -1,5 +1,6 @@
 #include "menu.h"
 #include "assets.h"
+#include "audio.h"
 #include "hex_grid.h"
 #include "text_util.h"
 #include "gates.h"
@@ -101,6 +102,40 @@ namespace
         float tx = bounds.x + (bounds.width - text_size.x) / 2.0f;
         float ty = bounds.y + (bounds.height - text_size.y) / 2.0f;
         DrawTextShadowed(font, text, static_cast<int>(tx), static_cast<int>(ty), 20, text_color);
+    }
+
+    void DrawMuteButton(float anim_time)
+    {
+        Font font = GetGameFont();
+        Rectangle r = {630.0f, 8.0f, 82.0f, 24.0f};
+        bool hovered = CheckCollisionPointRec(GetMousePosition(), r);
+        bool playing = IsMusicPlaying();
+
+        Color accent = playing ? Color{0, 200, 180, 255} : Color{120, 80, 80, 255};
+        Color bg = hovered ? Color{30, 40, 80, 255} : Color{15, 20, 40, 255};
+        Color border = hovered ? accent : Color{40, 80, 120, 255};
+
+        if (hovered)
+        {
+            float pulse = 0.5f + 0.5f * sinf(anim_time * 4.0f);
+            DrawRectangleRounded
+            (
+                {r.x - 2, r.y - 2, r.width + 4, r.height + 4},
+                0.3f, 6, ColorAlpha(accent, 0.15f * pulse)
+            );
+        }
+
+        DrawRectangleRounded(r, 0.3f, 6, bg);
+        DrawRectangleRoundedLines(r, 0.3f, 6, border);
+
+        const char* label = playing ? "SOUND [N]" : "MUTED [N]";
+        Vector2 text_size = MeasureTextEx(font, label, 14.0f, 1.0f);
+        float tx = r.x + (r.width - text_size.x) / 2.0f;
+        float ty = r.y + (r.height - text_size.y) / 2.0f;
+        Color text_col = playing
+            ? (hovered ? WHITE : Color{150, 200, 190, 255})
+            : (hovered ? WHITE : Color{150, 100, 100, 255});
+        DrawTextShadowed(font, label, static_cast<int>(tx), static_cast<int>(ty), 14, text_col);
     }
 
     void DrawMenuBackground(float anim_time)
@@ -362,6 +397,10 @@ GameState UpdateTitleScreen(float)
     {
         return GameState::TITLE_TO_PLAY_TRANSITION;
     }
+    if (IsKeyPressed(KEY_N))
+    {
+        SetMusicPlaying(!IsMusicPlaying());
+    }
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON))
     {
         Vector2 mpos = GetMousePosition();
@@ -371,7 +410,13 @@ GameState UpdateTitleScreen(float)
 
         Rectangle play_btn = {btn_x, 460, btn_w, btn_h};
         Rectangle howto_btn = {btn_x, 530, btn_w, btn_h};
+        Rectangle mute_btn = {630.0f, 8.0f, 82.0f, 24.0f};
 
+        if (CheckCollisionPointRec(mpos, mute_btn))
+        {
+            SetMusicPlaying(!IsMusicPlaying());
+            return GameState::TITLE_SCREEN;
+        }
         if (CheckCollisionPointRec(mpos, play_btn))
             return GameState::TITLE_TO_PLAY_TRANSITION;
         if (CheckCollisionPointRec(mpos, howto_btn))
@@ -490,5 +535,6 @@ void DrawTitleScreen(float anim_time, float transition_time, bool tutorial_requi
     }
 
     DrawCRTAndMouseTrail();
+    DrawMuteButton(anim_time);
 }
 

@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "circuit.h"
+#include "cursor.h"
 #include "gates.h"
 #include "hex_grid.h"
 #include "menu.h"
@@ -81,6 +82,7 @@ class Game
         t_PinHit hovered_pin;
         Vector2 mouse_pos;
         Vector2 ghost_pos;
+        t_CustomCursor cursor;
 
         // Juice
         std::vector<t_Particle> particles;

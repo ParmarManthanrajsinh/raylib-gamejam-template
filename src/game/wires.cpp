@@ -116,7 +116,7 @@ namespace
             ColorAlpha({160, 175, 190, 255}, alpha);
         
         int segments = 24;
-        Vector2 prev = p1;
+        Vector2 prev = p1; 
         for (int i = 1; i <= segments; i++)
         {
             float t = static_cast<float>(i) / static_cast<float>(segments);
@@ -126,7 +126,8 @@ namespace
             float uuu = uu * u;
             float ttt = tt * t;
 
-            Vector2 cur = {
+            Vector2 cur = 
+            {
                 uuu * p1.x + 3 * uu * t * cp1.x + 3 * u * tt * cp2.x + ttt * p2.x,
                 uuu * p1.y + 3 * uu * t * cp1.y + 3 * u * tt * cp2.y + ttt * p2.y
             };
